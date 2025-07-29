@@ -34,7 +34,7 @@ out/
 /.nb-gradle/
 
 # 실제 민감한 설정 파일 무시
-/src/main/resources/application.properties
+/src/main/resources/application-private.properties
 
 ### VS Code ###
 .vscode/
