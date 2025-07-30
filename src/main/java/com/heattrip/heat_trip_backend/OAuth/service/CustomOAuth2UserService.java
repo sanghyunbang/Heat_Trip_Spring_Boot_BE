@@ -10,13 +10,17 @@ import jakarta.validation.OverridesAttribute;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 import com.heattrip.heat_trip_backend.OAuth.user.CustomOAuth2User;
 import com.heattrip.heat_trip_backend.OAuth.user.GoogleOAuth2User;
 import com.heattrip.heat_trip_backend.OAuth.user.KakaoOAuth2User;
 import com.heattrip.heat_trip_backend.OAuth.user.NaverOAuth2User;
 import com.heattrip.heat_trip_backend.OAuth.user.OAuth2UserInfo;
+import com.heattrip.heat_trip_backend.user.entity.User;
+import com.heattrip.heat_trip_backend.user.repository.UserRepository;
 
 // 이 클래스는 로그인 성공시 호출될 예정 : SuccessHandler랑 관련
 // 1. 어떤 소셜 로그인인지 식별 
@@ -69,7 +73,11 @@ import com.heattrip.heat_trip_backend.OAuth.user.OAuth2UserInfo;
 // - 이 클래스의 생성자는 final로 선언된 필드들에 대한 생성자를 자동으로 만들어줍니다.
 // - 예를 들어, @Autowired를 사용하지 않고도 의존성 주입을 할 수 있습니다.
 
+@RequiredArgsConstructor // final 필드에 대한 생성자를 자동으로 생성해줍니다 -> repository 주입
+
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+
+    private final UserRepository userRepository; // 사용자 정보를 저장할 JPA Repository
 
     /**
      * 소셜 로그인 후 사용자 정보 요쳥이 완료되면 자동으로 이 메서드가 호출
@@ -116,8 +124,35 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         //    - 사용자 정보 저장
         //    - JWT 발급은 SuccessHandler에서 진행 예정
 
+        String username = userInfo.getProvider() + "_" + userInfo.getProviderId();
+
+
+        Optional<User> existingUser = userRepository.findByUsername(username);
+        User user;
+        if (existingUser.isPresent()) {
+            user = existingUser.get(); // 로그인 유저
+            // 기존 유저에 대해 필요한 업데이트 로직 추가 가능
+            return new CustomOAuth2User(userInfo, attributes);
+
+            // 기존 사용자 정보 업데이트 (예: 이메일, 프로필 사진 등) 로직 추가 가능
+        
+        } else {
+
+            user = User.builder()
+                .username(username) // provider + providerId 형식으로 username 설정
+                .email(userInfo.getEmail())  // email은 OAuth2UserInfo에서 가져옴
+                .name(userInfo.getName()) // 사용자 이름
+                .gender(User.Gender.OTHER) // 기본값 설정 (필요시 수정 가능)
+                .travelType("default") // 기본 여행 타입 설정 (필요시 수정 가능)
+                .createdAt(LocalDateTime.now()) // 생성일
+                .updatedAt(LocalDateTime.now()) // 수정일
+                .build();
+
+        // 새 사용자 저장
+        userRepository.save(user); // ← 신규 유저는 저장도 필요
+
         // 사용자 정보를 우리 CustomOAuth2User 객체에 담아서 반환 ( getName() 메서드로 사용자 식별 가능하게 해놓음 ( SucessHanlder와 관련 ) )
         return new CustomOAuth2User(userInfo, attributes);
+        }
     }
-
 }

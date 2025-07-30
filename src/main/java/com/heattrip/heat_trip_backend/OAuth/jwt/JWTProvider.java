@@ -58,6 +58,11 @@ public class JWTProvider {
         return parseClaims(token).getSubject();
     }
 
+    public String getRoleFromToken(String token) {
+        return parseClaims(token).get("role", String.class); // JWT 내의 role 클레임 읽기
+    }
+
+
     /**
      * JWT 토큰을 파싱해서 내부 클레임(내용)을 추출
      * @param token JWT 토큰 문자열
