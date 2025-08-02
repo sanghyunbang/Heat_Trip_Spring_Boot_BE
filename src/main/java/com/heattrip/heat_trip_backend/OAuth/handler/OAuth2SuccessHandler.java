@@ -41,6 +41,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler{
      public void onAuthenticationSuccess(HttpServletRequest request, 
                                          HttpServletResponse response, 
                                          Authentication authentication) throws IOException, ServletException {
+        
+        System.out.println("[V] OAuth2SuccessHandler triggered"); // 진입여부 확인
+
          // 인증 성공 후 JWT 토큰 생성 및 응답에 추가하는 로직을 구현할 예정
          // 예: String token = jwtProvider.createAccessToken(authentication.getName(), authentication.getAuthorities());
          // response.addHeader("Authorization", "Bearer " + token);
@@ -54,14 +57,39 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler{
          // JWT 토큰 생성
          String token = jwtProvider.createAccessToken(userId, role);
 
-         // 클라이언트(Flutter)에게 JSON 형태로 응답
-         response.setContentType("application/json");
-         response.setCharacterEncoding("UTF-8");
+         // flutter + web_oauth_2 에 맞춰서 redirec URI 만들기
+         // 예: heattrip://login-callback?token=<access-token>
+
+         String redirect = "heattrip://login-callback?token=" + token;
+
+         response.sendRedirect(redirect);
          
-         Map<String, String> tokenMap = new HashMap<>();
-         tokenMap.put("accessToken", token);
-         tokenMap.put("userId", userId);
-         tokenMap.put("role", role);
+         System.out.println("[!] onAuthenticationSuccess() called!");
+         System.out.println("[V] userId = " + userId);
+         System.out.println("[V] token = " + token);
+         System.out.println("[V] redirect = " + redirect);
+
+
+        
+    }  
+    
+}
+
+
+
+
+         // Flutter 앱으로 리디랙션
+         // 아래 URI는 flutter_web_auth_2에서 설정한 redirect URI와 일치해야 함
+
+
+         // 클라이언트(Flutter)에게 JSON 형태로 응답 : FLUTTER + FLUTTER_wEB_AUTH_2는 JSON 못받아옴
+        //  response.setContentType("application/json");
+        //  response.setCharacterEncoding("UTF-8");
+         
+        //  Map<String, String> tokenMap = new HashMap<>();
+        //  tokenMap.put("accessToken", token);
+        //  tokenMap.put("userId", userId);
+        //  tokenMap.put("role", role);
 
          // JSON을 만들어서 HTTP 응답으로 보내는 행위
          // Spring Security가 내부적으로 호출해서 처리 결과를 응답으로 보내주는 방식
@@ -84,8 +112,4 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler{
             클라이언트에서 JSON 응답 수신
 
          */
-         new ObjectMapper().writeValue(response.getWriter(), tokenMap); 
-        
-    }  
-    
-}
+        //  new ObjectMapper().writeValue(response.getWriter(), tokenMap); 

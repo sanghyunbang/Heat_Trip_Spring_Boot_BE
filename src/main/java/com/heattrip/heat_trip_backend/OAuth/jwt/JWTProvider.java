@@ -45,6 +45,11 @@ public class JWTProvider {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + TOKEN_VALID_TIME);
 
+        System.out.println("[JWTProvider] token 생성 진입");
+        System.out.println("[JWTProvider] secret length = " + secret.length());
+        System.out.println("[JWTProvider] userId: " + userId + ", role: " + role);
+
+
         return Jwts.builder()
                 .setSubject(userId)
                 .claim("role", role)

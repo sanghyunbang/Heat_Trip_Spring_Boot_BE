@@ -87,6 +87,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
      @Override
      public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        
+        try {
+            System.out.println("[V] CustomOAuth2UserService.loadUser 진입");
+            // 기존 처리
+        } catch (Exception e) {
+            System.out.println("[!] CustomOAuth2UserService.loadUser에서 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
 
         // 기본 메서드를 사용하여 OAuth2 서버에서 사용자 정보를 가져옴
         OAuth2User oAuth2User = super.loadUser(userRequest);
@@ -106,6 +116,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 userInfo = new GoogleOAuth2User(attributes);
                 break;      
             case "kakao":
+                userInfo = new KakaoOAuth2User(attributes);
+                break;
+            case "Kakao":
                 userInfo = new KakaoOAuth2User(attributes);
                 break;
             case "naver":
@@ -150,6 +163,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // 새 사용자 저장
         userRepository.save(user); // ← 신규 유저는 저장도 필요
+
+        System.out.println("[DEBUG] Returning CustomOAuth2User for provider: " + registrationId); // [0802 디버깅 추가]
+
 
         // 사용자 정보를 우리 CustomOAuth2User 객체에 담아서 반환 ( getName() 메서드로 사용자 식별 가능하게 해놓음 ( SucessHanlder와 관련 ) )
         return new CustomOAuth2User(userInfo, attributes);
