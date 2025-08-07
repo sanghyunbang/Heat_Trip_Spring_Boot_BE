@@ -57,4 +57,9 @@ public class UserService {
         return jwtProvider.createAccessToken(user.getEmail(), "ROLE_USER");
 
     }
+    public User findByEmail(String email) {
+    return userRepository.findByEmail(email)
+            .orElse(null); // 또는 .orElseThrow(...)로 에러 던져도 됨
+}
+
 }
