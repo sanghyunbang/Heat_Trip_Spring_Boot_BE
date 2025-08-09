@@ -32,7 +32,7 @@ public class PlaceImportService {
     }
 
     private void fetchParseSaveByArea(int areaCode) throws Exception {
-        int pageNo = 10;
+        int pageNo = 1;
         int numOfRows = 1000;
 
         while (true) {
