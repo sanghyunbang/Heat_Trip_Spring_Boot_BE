@@ -16,10 +16,10 @@ public class TourFetchScheduler {
     private final PlaceImportService importer;
 
     /* 앱 시작시 즉시 1회 실행 */
-    @PostConstruct
-    public void runOnStartUp() throws Exception {
-        importer.fullImportAllAreas();
-    }
+    // @PostConstruct
+    // public void runOnStartUp() throws Exception {
+    //     importer.fullImportAllAreas();
+    // }
 
     /* 매일 02:10에 실행 */
     @Scheduled(cron = "0 10 2 * * *", zone = "Asia/Seoul")

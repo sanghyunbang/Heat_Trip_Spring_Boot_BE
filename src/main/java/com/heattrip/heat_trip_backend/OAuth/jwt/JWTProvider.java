@@ -22,7 +22,7 @@ public class JWTProvider {
     // 이 키는 비밀 키로, JWT 토큰의 서명을 생성하고 검증하는 데 사용됩니다.    
     private Key key;
 
-    private final long TOKEN_VALID_TIME = 1000L * 60 * 60; // 1시간
+    private final long TOKEN_VALID_TIME = 1000L * 60 * 60 * 10000; // 1시간
 
     // @PostConstruct 어노테이션은 이 메서드가 빈 초기화 후에 호출됨을 나타냅니다.
     // 이 메서드는 JWTProvider가 생성된 후, 즉 의존성 주입이 완료된 후에 실행됩니다.

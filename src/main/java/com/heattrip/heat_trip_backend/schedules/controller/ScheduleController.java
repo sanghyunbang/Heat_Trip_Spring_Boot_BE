@@ -44,6 +44,7 @@ public class ScheduleController {
     @GetMapping("/getuser")
 public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
     String authHeader = request.getHeader("Authorization");
+    System.out.println("GetUser 진입");
 
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
         return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
