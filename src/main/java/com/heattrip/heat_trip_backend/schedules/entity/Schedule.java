@@ -14,17 +14,26 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Schedule {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer scheduleId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;  // users 테이블과의 외래키 관계
+    private User user;
 
     @Column(length = 100)
     private String title;
+
+    @Column(length = 1000)
+    private String content;
 
     @Column(name = "date_from")
     private LocalDate dateFrom;
@@ -48,5 +57,6 @@ public class Schedule {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-
 }
+
+

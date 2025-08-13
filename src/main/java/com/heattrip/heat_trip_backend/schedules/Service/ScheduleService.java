@@ -27,5 +27,8 @@ public class ScheduleService {
     public List<User> userinfo(){
         return repository.findAll();
     }
+    public List<Schedule> findByUser(User user) {
+    return schedulerepository.findByUser(user);
+}
 
 }
