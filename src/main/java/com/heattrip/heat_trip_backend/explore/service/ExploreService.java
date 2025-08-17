@@ -20,7 +20,7 @@ import com.heattrip.heat_trip_backend.explore.dto.PlaceSearchCond;
 import com.heattrip.heat_trip_backend.explore.dto.PlaceSummaryDto;
 import com.heattrip.heat_trip_backend.explore.mapper.PlaceMapper;               // ← MapStruct 매퍼 주입 (Entity/Projection → DTO 변환 담당)
 import com.heattrip.heat_trip_backend.explore.repository.PlaceQueryRepository; // ← 네이티브 + 커서(Keyset) 페이지네이션용 Repository
-import com.heattrip.heat_trip_backend.explore.repository.PlaceRepository;      // ← JPQL + 오프셋(페이지/사이즈) 페이지네이션용 Repository
+import com.heattrip.heat_trip_backend.explore.repository.ExplorePlaceRepository;      // ← JPQL + 오프셋(페이지/사이즈) 페이지네이션용 Repository
 import com.heattrip.heat_trip_backend.explore.repository.PlaceSummaryProjection;
 import com.heattrip.heat_trip_backend.tour.domain.Place;
 
@@ -42,12 +42,12 @@ import com.heattrip.heat_trip_backend.tour.domain.Place;
 @Transactional(readOnly = true) // ← 읽기 전용 트랜잭션: JPA 변경 감지 비활성 최적화(일부 DB 힌트/캐시 유리)
 public class ExploreService {
 
-    private final PlaceRepository repo;            // ← Offset 페이지네이션용(JPQL로 DTO 생성 반환)
+    private final ExplorePlaceRepository repo;            // ← Offset 페이지네이션용(JPQL로 DTO 생성 반환)
     private final PlaceQueryRepository cursorRepo; // ← Cursor 페이지네이션용(네이티브 + Projection)
     private final PlaceMapper mapper;              // ← MapStruct 매퍼(컴파일타임 생성 코드로 고성능 매핑)
 
     public ExploreService(
-        PlaceRepository repo,
+        ExplorePlaceRepository repo,
         PlaceQueryRepository cursorRepo,
         PlaceMapper mapper
     ) {

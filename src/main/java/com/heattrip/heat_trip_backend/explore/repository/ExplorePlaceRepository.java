@@ -1,5 +1,6 @@
 package com.heattrip.heat_trip_backend.explore.repository;
 
+
 import com.heattrip.heat_trip_backend.tour.domain.Place;
 import com.heattrip.heat_trip_backend.explore.dto.PlaceSummaryDto;
 
@@ -28,7 +29,7 @@ import org.springframework.data.repository.query.Param;
  * 4) WHERE 절의 "(:param IS NULL OR col = :param)" 패턴은 단일 쿼리로 동적 필터링을 처리할 수 있는 장점이 있지만,
  *    인덱스 활용이 떨어질 수 있습니다(선택도가 낮으면 풀스캔 위험). QueryDSL/스펙으로 "조건이 있을 때만 추가"하는 방식도 고려.
  */
-public interface PlaceRepository extends JpaRepository<Place, Long>{
+public interface ExplorePlaceRepository extends JpaRepository<Place, Long>{
 
     @Query("""
     SELECT NEW com.heattrip.heat_trip_backend.explore.dto.PlaceSummaryDto(
