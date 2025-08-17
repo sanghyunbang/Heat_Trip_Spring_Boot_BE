@@ -29,6 +29,14 @@ public class ScheduleService {
     }
     public List<Schedule> findByUser(User user) {
     return schedulerepository.findByUser(user);
-}
+    }
+    public Schedule findById(Integer id) {
+        return schedulerepository.findById(id).orElse(null);
+    }
+    public void delete(Schedule schedule) {
+    schedulerepository.delete(schedule);
+    }
+
+
 
 }

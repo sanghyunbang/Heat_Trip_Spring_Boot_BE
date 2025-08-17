@@ -1,6 +1,8 @@
 package com.heattrip.heat_trip_backend.schedules.DTO;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.heattrip.heat_trip_backend.schedules.entity.Schedule;
 
 import lombok.Data;
@@ -13,6 +15,8 @@ public class ScheduleResponseDto {
     private LocalDate dateFrom;
     private LocalDate dateTo;
     private String userNickname;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public ScheduleResponseDto(Schedule schedule) {
         this.scheduleId = schedule.getScheduleId();
@@ -20,9 +24,8 @@ public class ScheduleResponseDto {
         this.content = schedule.getContent();
         this.dateFrom = schedule.getDateFrom();
         this.dateTo = schedule.getDateTo();
-        this.userNickname = schedule.getUser().getNickname(); // 예: user 닉네임
+        this.userNickname = schedule.getUser().getNickname();
+        this.createdAt = schedule.getCreatedAt();
+        this.updatedAt = schedule.getUpdatedAt();
     }
-
-    // Getters 생략 가능 (Lombok 써도 OK)
 }
-

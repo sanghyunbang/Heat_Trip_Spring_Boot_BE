@@ -120,5 +120,90 @@ public ResponseEntity<?> getMySchedules(HttpServletRequest request) {
     return ResponseEntity.ok(user);
 }
 
+// --------------수정
+@PutMapping("/schedules/{scheduleId}")
+public ResponseEntity<?> updateSchedule(
+        @PathVariable("scheduleId") Integer scheduleId,
+        @RequestBody Schedule updatedSchedule,
+        HttpServletRequest request) {
+            System.out.println("                  수정 메서드 진입 ");
+
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
+    }
+
+    String token = authHeader.substring(7);
+    if (!jwtProvider.validateToken(token)) {
+        return ResponseEntity.status(401).body("유효하지 않은 토큰입니다.");
+    }
+
+    String userId = jwtProvider.getUserIdFromToken(token);
+    User user = userService.findByEmail(userId);
+    if (user == null) {
+        return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+    }
+
+    // 기존 스케줄 조회
+    Schedule existing = scheduleService.findById(scheduleId);
+    if (existing == null) {
+        return ResponseEntity.status(404).body("수정할 스케줄을 찾을 수 없습니다.");
+    }
+
+    // 본인 소유 스케줄인지 확인
+    if (!existing.getUser().getId().equals(user.getId())) {
+        return ResponseEntity.status(403).body("본인의 스케줄만 수정할 수 있습니다.");
+    }
+
+    // 수정 필드 반영
+    existing.setTitle(updatedSchedule.getTitle());
+    existing.setContent(updatedSchedule.getContent());
+    existing.setDateFrom(updatedSchedule.getDateFrom());
+    existing.setDateTo(updatedSchedule.getDateTo());
+
+    // 저장
+    Schedule saved = scheduleService.save(existing);
+    return ResponseEntity.ok(saved);
+}
+
+// --------------삭제
+@DeleteMapping("/schedules/{scheduleId}")
+public ResponseEntity<?> deleteSchedule(
+        @PathVariable("scheduleId") Integer scheduleId,
+        HttpServletRequest request) {
+            System.out.println("            스케쥴 삭제 진입 ");
+
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
+    }
+
+    String token = authHeader.substring(7);
+    if (!jwtProvider.validateToken(token)) {
+        return ResponseEntity.status(401).body("유효하지 않은 토큰입니다.");
+    }
+
+    String userId = jwtProvider.getUserIdFromToken(token);
+    User user = userService.findByEmail(userId);
+    if (user == null) {
+        return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+    }
+
+    Schedule existing = scheduleService.findById(scheduleId);
+    if (existing == null) {
+        return ResponseEntity.status(404).body("삭제할 스케줄을 찾을 수 없습니다.");
+    }
+
+    // 본인 소유 스케줄인지 확인
+    if (!existing.getUser().getId().equals(user.getId())) {
+        return ResponseEntity.status(403).body("본인의 스케줄만 삭제할 수 있습니다.");
+    }
+
+    scheduleService.delete(existing);
+
+    return ResponseEntity.noContent().build();
+}
+
+
 
 }
