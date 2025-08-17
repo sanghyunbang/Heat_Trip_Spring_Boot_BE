@@ -1,5 +1,7 @@
 package com.heattrip.heat_trip_backend.tour.dto;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.*;
@@ -25,7 +27,7 @@ public class PlaceItemDto {
     private Integer areacode, sigungucode, lDongRegnCd, lDongSignguCd;
     private String tel;
     private String contenttypeid;
-    private String createdtime;
-    private String modifiedtime;
+    private LocalDateTime createdtime;
+    private LocalDateTime modifiedtime;
     private String mlevel;
 }

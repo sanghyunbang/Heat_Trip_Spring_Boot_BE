@@ -1,5 +1,7 @@
 package com.heattrip.heat_trip_backend.tour.domain;
 
+import java.time.LocalDateTime;
+
 import com.heattrip.heat_trip_backend.tour.util.Sanitizers;
 
 import jakarta.persistence.Column;
@@ -70,8 +72,14 @@ public class Place {
 
     private String contenttypeid;
 
-    private String createdtime;
-    private String modifiedtime;
+    // private String createdtime;
+    // private String modifiedtime;
+    // 빠른 정렬/필터링 위해서 varchar -> LocalDateTime으로 타입 변경
+    // DB도 직접 쿼리문으로 타입 변경하기
+    // DTO도 변경
+    private LocalDateTime createdtime;
+    private LocalDateTime modifiedtime;
+    
     private String mlevel;
 
     @PrePersist

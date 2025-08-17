@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heattrip.heat_trip_backend.tour.domain.Place;
 import com.heattrip.heat_trip_backend.tour.dto.PlaceItemDto;
 import com.heattrip.heat_trip_backend.tour.mapper.PlaceMapper;
-import com.heattrip.heat_trip_backend.tour.util.XmlParser;
+// import com.heattrip.heat_trip_backend.tour.util.XmlParser;
 
 import lombok.RequiredArgsConstructor;
 

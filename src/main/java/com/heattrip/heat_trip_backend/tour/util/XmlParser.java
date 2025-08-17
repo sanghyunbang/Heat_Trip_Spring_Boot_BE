@@ -51,8 +51,8 @@ public class XmlParser {
                     .lDongSignguCd(getInt(e, "lDongSignguCd"))
                     .tel(getStr(e, "tel"))
                     .contenttypeid(getStr(e, "contenttypeid"))
-                    .createdtime(getStr(e, "createdtime"))
-                    .modifiedtime(getStr(e, "modifiedtime"))
+                    .createdtime(parseLocalDateTime(getStr(e, "createdtime")))
+                    .modifiedtime(parseLocalDateTime(getStr(e, "modifiedtime")))
                     .mlevel(getStr(e, "mlevel"))
                     .build();
                 list.add(dto);
@@ -77,6 +77,13 @@ public class XmlParser {
     private Double getDouble(Element e, String tag) {
         String s = getStr(e, tag);
         return (s == null || s.isBlank()) ? null : Double.parseDouble(s);
+    }
+
+    private java.time.LocalDateTime parseLocalDateTime(String s) {
+        if (s == null || s.isBlank()) return null;
+        // Adjust the pattern according to your XML date format, e.g. "yyyy-MM-dd'T'HH:mm:ss"
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        return java.time.LocalDateTime.parse(s, formatter);
     }
 
 }
