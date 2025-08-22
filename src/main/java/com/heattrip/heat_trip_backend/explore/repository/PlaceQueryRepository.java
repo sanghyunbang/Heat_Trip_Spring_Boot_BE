@@ -33,9 +33,12 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
           p.contentid   AS contentid,    -- 프로젝션: getContentid()
           p.title       AS title,        -- 프로젝션: getTitle()
           p.firstimage  AS firstimage,   -- 프로젝션: getFirstimage()
-          p.areacode    AS areacode,     -- 프로젝션: getAreacode()
-          p.sigungucode AS sigungucode,  -- 프로젝션: getSigungucode()
-          p.createdtime AS createdtime   -- 프로젝션: getCreatedtime()
+          -- p.areacode    AS areacode,     -- 프로젝션: getAreacode() (주석 처리 [0822])
+          -- p.sigungucode AS sigungucode,  -- 프로젝션: getSigungucode() (주석 처리 [0822])
+          p.createdtime AS createdtime,   -- 프로젝션: getCreatedtime() 
+          p.addr1 AS addr1,          -- 프로젝션: getAddr1() (추가 [0822])
+          p.addr2 AS addr2,          -- 프로젝션: getAddr2() (추가 [0822])
+          p.firstimage2 AS firstimage2 -- 프로젝션: getFirstimage2() (추가 [0822])
       FROM places p
       WHERE (:areacode    IS NULL OR p.areacode    = :areacode)         -- 지역 코드 필터(선택): null이면 건너뜀
         AND (:sigungucode IS NULL OR p.sigungucode = :sigungucode)       -- 시군구 코드 필터(선택)
@@ -47,7 +50,7 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
           OR p.createdtime < :afterCreated                                -- 이전 페이지 마지막 createdtime 보다 "더 과거(작은)" 행
           OR (p.createdtime = :afterCreated AND p.contentid < :afterId)   -- 동시간대의 경우 contentid 로 안정적인 이어받기
         )
-      ORDER BY p.createdtime DESC, p.contentid DESC                       -- 최신순 정렬 + 보조키로 안정화
+      ORDER BY p.createdtime DESC, p.contentid DESC                       /*최신순 정렬 + 보조키로 안정화*/
       """,
       nativeQuery = true)
     List<PlaceSummaryProjection> findNextByCursor(

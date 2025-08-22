@@ -29,9 +29,15 @@ public interface PlaceSummaryProjection {
 
   String getFirstimage();   // SELECT ... AS firstimage ← 대표 이미지 URL(없을 수 있으므로 String).
 
-  Integer getAreacode();    // SELECT ... AS areacode   ← 지역 필터/표시용. null 허용으로 Integer 사용.
+  String getAddr1();        // SELECT ... AS addr1     ← 주소1(시도/구군 등) 표시용. null 가능.
 
-  Integer getSigungucode(); // SELECT ... AS sigungucode← 시군구 코드. 마찬가지로 null 허용.
+  String getAddr2();        // SELECT ... AS addr2     ← 주소2(동/읍면 등) 표시용. null 가능.
+
+  String getFirstimage2();  // SELECT ... AS firstimage2 ← 플러터와 통일된 추가 이미지 URL(없을 수 있으므로 String).
+
+  // Integer getAreacode();    // SELECT ... AS areacode   ← 지역 필터/표시용. null 허용으로 Integer 사용.
+
+  // Integer getSigungucode(); // SELECT ... AS sigungucode← 시군구 코드. 마찬가지로 null 허용.
 
   Timestamp getCreatedtime(); // SELECT ... AS createdtime ← 정렬/커서 기준 키.
                               //  - 네이티브에서 DATETIME/TIMESTAMP 컬럼이면 Timestamp로 수신.

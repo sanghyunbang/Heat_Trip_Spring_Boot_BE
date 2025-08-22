@@ -7,6 +7,9 @@ import com.heattrip.heat_trip_backend.explore.dto.PlaceSearchCond;
 import com.heattrip.heat_trip_backend.explore.dto.PlaceSummaryDto;
 import com.heattrip.heat_trip_backend.explore.service.ExploreService;
 
+import org.slf4j.Logger;                      // ⬅ 추가
+import org.slf4j.LoggerFactory; 
+
 import org.springframework.validation.annotation.Validated;      // ← 메서드 파라미터 검증 활성화 (선택)
 import jakarta.validation.constraints.Max;                  // ← size 등 파라미터 범위 검증 (선택)
 import jakarta.validation.constraints.Min;
@@ -34,6 +37,9 @@ public class ExploreController {
 
     private final ExploreService service;
 
+    private static final Logger log = LoggerFactory.getLogger(ExploreController.class); // ⬅ 추가
+
+
     public ExploreController(ExploreService service) {
         this.service = service;
     }
@@ -46,7 +52,7 @@ public class ExploreController {
      * @return PlaceDetailDto 상세 DTO
      */
     @GetMapping("/{id}")
-    public PlaceDetailDto get(@PathVariable Long id) {
+    public PlaceDetailDto get(@PathVariable("id") Long id) {
         return service.get(id);
     }
 
@@ -61,14 +67,16 @@ public class ExploreController {
      */
     @GetMapping
     public PageResponse<PlaceSummaryDto> list(
-        @RequestParam(required = false) Integer areacode,
-        @RequestParam(required = false) Integer sigungucode,
-        @RequestParam(required = false) String cat1,
-        @RequestParam(required = false) String cat2,
-        @RequestParam(required = false) String cat3,
-        @RequestParam(defaultValue = "0") @Min(0) int page,      // 음수 방지
-        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size // 과도한 요청 방지
+        @RequestParam(name = "areacode",  required = false) Integer areacode,
+        @RequestParam(name = "sigungucode",  required = false) Integer sigungucode,
+        @RequestParam(name = "cat1",  required = false) String cat1,
+        @RequestParam(name = "cat2",  required = false) String cat2,
+        @RequestParam(name = "cat3",  required = false) String cat3,
+        @RequestParam(name = "page",  defaultValue = "0") @Min(0) int page,      // 음수 방지
+        @RequestParam(name = "size",  defaultValue = "20") @Min(1) @Max(100) int size // 과도한 요청 방지
     ) {
+        log.info("[GET] /api/explore/places?page={}&size={}&area={}&sigungu={}&cat1={}&cat2={}&cat3={}",
+                 page, size, areacode, sigungucode, cat1, cat2, cat3);       // 디버깅 추가
         // 컨트롤러에서는 입력 파라미터를 간단히 DTO로 모아 서비스에 전달
         var cond = PlaceSearchCond.builder()
             .areacode(areacode)
@@ -94,24 +102,30 @@ public class ExploreController {
      *   2) 다음 페이지:
      *      GET /api/explore/places/scroll?areacode=39&size=20&cursor=eyJ... (Base64URL)
      */
-    @GetMapping("/scroll")
+   @GetMapping("/scroll")
     public CursorPageResponse<PlaceSummaryDto> scroll(
-        @RequestParam(required = false) Integer areacode,
-        @RequestParam(required = false) Integer sigungucode,
-        @RequestParam(required = false) String cat1,
-        @RequestParam(required = false) String cat2,
-        @RequestParam(required = false) String cat3,
-        @RequestParam(required = false) String cursor,            // Base64URL("millis:id")
-        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+        @RequestParam(name = "areacode",    required = false) Integer areacode,
+        @RequestParam(name = "sigungucode", required = false) Integer sigungucode,
+        @RequestParam(name = "cat1",        required = false) String  cat1,
+        @RequestParam(name = "cat2",        required = false) String  cat2,
+        @RequestParam(name = "cat3",        required = false) String  cat3,
+        @RequestParam(name = "cursor",      required = false) String  cursor,
+        @RequestParam(name = "size",        defaultValue = "20") @Min(1) @Max(100) int size
     ) {
+        log.info("[GET] /api/explore/places/scroll?area={}&sigungu={}&cat1={}&cat2={}&cat3={}&cursor='{}'&size={}",
+                 areacode, sigungucode, cat1, cat2, cat3, cursor, size);     // ⬅ 추가
+
         var cond = PlaceSearchCond.builder()
-            .areacode(areacode)
-            .sigungucode(sigungucode)
-            .cat1(cat1)
-            .cat2(cat2)
-            .cat3(cat3)
+            .areacode(areacode).sigungucode(sigungucode)
+            .cat1(cat1).cat2(cat2).cat3(cat3)
             .build();
 
-        return service.scroll(cond, cursor, size);
+        try {
+            return service.scroll(cond, cursor, size);  // ⬅ 에러 발생 지점
+        } catch (Exception e) {
+            log.error("scroll() failed: area={} sigungu={} cat1={} cat2={} cat3={} cursor='{}' size={}",
+                      areacode, sigungucode, cat1, cat2, cat3, cursor, size, e); // ⬅ 스택 출력
+            throw e; // 전역 핸들러로 전달
+        }
     }
 }
