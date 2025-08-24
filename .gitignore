@@ -39,3 +39,7 @@ out/
 ### VS Code ###
 .vscode/
 
+# === app data (do not commit) ===
+# 모든 모듈의 src/main/resources/data/ 및 src/test/resources/data/ 아래 파일 무시
+**/src/main/resources/data/**
+**/src/test/resources/data/**
