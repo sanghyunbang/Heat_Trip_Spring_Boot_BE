@@ -24,6 +24,14 @@ repositories {
 }
 
 dependencies {
+
+	annotationProcessor 'org.projectlombok:lombok'
+
+
+	// MapStruct + Lombok 연동 관련
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+  	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
@@ -33,7 +41,6 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -47,12 +54,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
 	// MapStruct 수동 매퍼 관련
-	implementation "org.mapstruct:mapstruct:1.5.5.Final"
 	annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
+	implementation "org.mapstruct:mapstruct:1.5.5.Final"
 
-	// MapStruct + Lombok 연동 관련
-	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-  	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 
 	// AWS S3
 	// implementation 'software.amazon.awssdk:s3:2.20.89'
