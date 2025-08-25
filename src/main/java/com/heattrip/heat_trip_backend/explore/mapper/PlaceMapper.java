@@ -29,7 +29,8 @@ import com.heattrip.heat_trip_backend.tour.domain.Place;
  */
 @Mapper(
     componentModel = "spring",
-    unmappedTargetPolicy = ReportingPolicy.IGNORE
+    unmappedTargetPolicy = ReportingPolicy.IGNORE,
+    uses = JsonListMapper.class               // [0825] 추가: 문자열 JSON → List 변환기 사용
 )
 public interface PlaceMapper {
 
@@ -51,7 +52,13 @@ public interface PlaceMapper {
      *  - DTO의 createdtime(LocalDateTime)으로 변환해 주어야 하므로
      *    @Named 메서드(tsToLdt)를 만들어 qualifiedByName로 연결합니다.
      * ------------------------------------------------------------- */
-    @Mapping(source = "createdtime", target = "createdtime", qualifiedByName = "tsToLdt")
+
+    // 요약 (여기에 매핑 보강)
+    @Mapping(source = "createdtime",  target = "createdtime",  qualifiedByName = "tsToLdt")
+    @Mapping(source = "hashtagsJson", target = "hashtags",     qualifiedByName = "jsonToList")     // 추가
+    @Mapping(source = "simpleTagsJson", target = "simpleTags", qualifiedByName = "jsonToList")     // 추가
+    // cat3 / cat3Name / shortDesc1 / shortDesc2 / addr1 / addr2 / firstimage2 등은
+    // 이름이 같으므로 자동 매핑됩니다.
     PlaceSummaryDto toSummary(PlaceSummaryProjection p);
 
     /* -------------------------------------------------------------

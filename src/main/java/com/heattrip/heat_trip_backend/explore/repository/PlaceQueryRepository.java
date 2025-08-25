@@ -38,8 +38,19 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
           p.createdtime AS createdtime,   -- 프로젝션: getCreatedtime() 
           p.addr1 AS addr1,          -- 프로젝션: getAddr1() (추가 [0822])
           p.addr2 AS addr2,          -- 프로젝션: getAddr2() (추가 [0822])
-          p.firstimage2 AS firstimage2 -- 프로젝션: getFirstimage2() (추가 [0822])
-      FROM places p
+          p.firstimage2 AS firstimage2, -- 프로젝션: getFirstimage2() (추가 [0822])
+          
+          /* 스냅샷 추가 [0825]*/
+          s.cat3         AS cat3,            -- getCat3()
+          s.cat3name    AS cat3Name,        -- getCat3Name()
+          s.short_desc1  AS shortDesc1,      -- getShortDesc1()
+          s.short_desc2  AS shortDesc2,      -- getShortDesc2()
+          -- [! 주의 ] ▼ JSON 컬럼은 “반드시 문자열로 캐스팅”해서 별칭 부여
+          CAST(s.hashtags    AS CHAR) AS hashtagsJson,    -- ← 게터: getHashtagsJson()
+          CAST(s.simple_tags AS CHAR) AS simpleTagsJson   -- ← 게터: getSimpleTagsJson()   
+          FROM places p
+          JOIN place_trait_snapshots s
+            ON p.cat3 = s.cat3
       WHERE (:areacode    IS NULL OR p.areacode    = :areacode)         -- 지역 코드 필터(선택): null이면 건너뜀
         AND (:sigungucode IS NULL OR p.sigungucode = :sigungucode)       -- 시군구 코드 필터(선택)
         AND (:cat1 IS NULL OR p.cat1 = :cat1)                            -- 카테고리1 필터(선택)
@@ -50,6 +61,9 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
           OR p.createdtime < :afterCreated                                -- 이전 페이지 마지막 createdtime 보다 "더 과거(작은)" 행
           OR (p.createdtime = :afterCreated AND p.contentid < :afterId)   -- 동시간대의 경우 contentid 로 안정적인 이어받기
         )
+        -- [0825] firstimage 가 null/빈문자/공백이면 제외
+        AND NULLIF(TRIM(p.firstimage), '') IS NOT NULL
+
       ORDER BY p.createdtime DESC, p.contentid DESC                       /*최신순 정렬 + 보조키로 안정화*/
       """,
       nativeQuery = true)

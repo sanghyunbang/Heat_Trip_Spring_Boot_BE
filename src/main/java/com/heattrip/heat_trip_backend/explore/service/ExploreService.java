@@ -113,61 +113,65 @@ public class ExploreService {
      * - DB의 createdtime 타임존/타입과 앱의 변환 기준(UTC/KST)이 다르면 커서 불일치가 생길 수 있음(아래 ⑥ 설명 참고).
      */
     public CursorPageResponse<PlaceSummaryDto> scroll(PlaceSearchCond c, String cursor, int size) {
-        int safeSize = Math.max(1, Math.min(size, 100)); // ← 안전장치
-        int sizePlusOne = safeSize + 1;                  // ← +1 오버페치로 hasNext 판정
+        int safeSize = Math.max(1, Math.min(size, 100));
+        int sizePlusOne = safeSize + 1;
 
-        // ① 커서 디코딩 (없으면 첫 페이지)
-        Timestamp afterCreated = null; // ← 이전 페이지 마지막 createdtime (이하의 쿼리 WHERE에서 '작다' 조건에 쓰임)
-        Long afterId = null;           // ← 보조 키(contentid)
-        if (cursor != null && !cursor.isBlank()) {
-            // cursor 포맷: Base64URL("millis:id")
-            String raw = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8); // ← URL-safe Base64 디코드
-            String[] parts = raw.split(":");
-            long millis = Long.parseLong(parts[0]); // ← epoch milli → Timestamp 복원
-            afterCreated = new Timestamp(millis);
-            afterId = Long.parseLong(parts[1]);
-            // [주의] 예외 처리 없음: 숫자 아님/포맷 깨짐 등은 런타임 예외 가능 → 운영에서는 try/catch로 안전 처리 권장
+        // ① 커서 디코딩 (방어적으로)
+        java.sql.Timestamp afterCreated = null;
+        Long afterId = null;
+        if (cursor != null && !cursor.isBlank()
+                && !"null".equalsIgnoreCase(cursor)
+                && !"undefined".equalsIgnoreCase(cursor)) {
+            try {
+                String raw = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
+                String[] parts = raw.split(":");
+                long millis = Long.parseLong(parts[0]);
+                afterCreated = new java.sql.Timestamp(millis);
+                afterId = Long.parseLong(parts[1]);
+            } catch (Exception ignore) {
+                // 커서가 이상하면 그냥 첫 페이지 취급
+                afterCreated = null;
+                afterId = null;
+            }
         }
 
-        // ② Pageable(pageSize=size+1, offset=0)
-        // - 네이티브 쿼리에서 LIMIT 바인딩 이슈를 피하기 위해 Pageable을 사용.
-        // - 커서 페이징에서는 OFFSET=0 고정 사용(OFFSET과 커서를 혼합하면 의미가 꼬일 수 있음).
         var pageable = PageRequest.of(0, sizePlusOne);
 
-        // ③ 네이티브 쿼리 실행 → Projection 목록 수신(필요 필드만 얇게 가져옴)
+        // ② 쿼리 호출
         List<PlaceSummaryProjection> rows = cursorRepo.findNextByCursor(
             c.getAreacode(), c.getSigungucode(), c.getCat1(), c.getCat2(), c.getCat3(),
-            afterCreated, afterId,
-            pageable
+            afterCreated, afterId, pageable
         );
 
-        // ④ 다음 페이지 존재 여부(+1 오버페치로 판정)
         boolean hasNext = rows.size() > safeSize;
 
-        // ⑤ 반환 크기만큼 자르기 & Projection → DTO 변환(MapStruct)
+        // ③ DTO 매핑
         var slice = rows.stream().limit(safeSize).toList();
         List<PlaceSummaryDto> items = slice.stream()
-            .map(mapper::toSummary)    // ← MapStruct가 타입 변환(Timestamp → LocalDateTime 등) 포함 처리
-            .toList();
-        // [주의] 매핑 성능: 수천 건/초 단위 트래픽이면 MapStruct는 충분히 빠름. 더 최적화가 필요하면 Projection 대신 DTO 직접 select 고려(네이티브에서도 가능).
+                .map(mapper::toSummary)
+                .toList();
 
-        // ⑥ nextCursor 구성: 마지막 항목의 (createdtime, contentid)
+        // ④ nextCursor 만들기(프로젝션에서 직접 꺼내 NULL 방지)
         String nextCursor = null;
-        if (hasNext && !items.isEmpty()) {
-            var last = items.get(items.size() - 1);
-            long millis = last.getCreatedtime()
-                // DB timestamp를 "UTC로 해석"하여 epoch milli로 변환한다는 가정.
-                // - 만약 DB가 KST로 저장/해석된다면 ZoneOffset.UTC 대신 ZoneOffset.ofHours(9)를 사용해야 커서 일관성 유지.
-                // - 여기서는 "코드 변경 없이 주석만" 요구이므로 설명만 남김.
-                .atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
-            nextCursor = Base64.getUrlEncoder()
-                .encodeToString((millis + ":" + last.getContentid()).getBytes(StandardCharsets.UTF_8));
-            // [포맷] Base64 URL-safe 인코딩 → 쿼리스트링/경로에 안전하게 포함 가능('+' '/' '=' 문제 회피)
+        if (hasNext && !slice.isEmpty()) {
+            java.sql.Timestamp lastTs = null;
+            Long lastId = null;
+            for (int i = slice.size() - 1; i >= 0; i--) {
+                var r = slice.get(i);
+                if (r.getCreatedtime() != null) {
+                    lastTs = r.getCreatedtime();
+                    lastId = r.getContentid();
+                    break;
+                }
+            }
+            if (lastTs != null && lastId != null) {
+                long millis = lastTs.getTime();
+                nextCursor = Base64.getUrlEncoder()
+                        .encodeToString((millis + ":" + lastId).getBytes(StandardCharsets.UTF_8));
+            }
         }
 
-        // ⑦ 결과 포장: 아이템, 다음 커서, 다음 존재 여부
-        // - 클라이언트는 nextCursor 가 null 이 아니면 이어서 호출.
-        // - 데이터가 추가/삭제되어도 커서 기준 정렬이 안정성을 보장(동시간대 contentid로 타이브레이크).
         return new CursorPageResponse<>(items, nextCursor, hasNext);
     }
+
 }

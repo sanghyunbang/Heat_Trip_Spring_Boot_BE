@@ -42,4 +42,13 @@ public interface PlaceSummaryProjection {
   Timestamp getCreatedtime(); // SELECT ... AS createdtime ← 정렬/커서 기준 키.
                               //  - 네이티브에서 DATETIME/TIMESTAMP 컬럼이면 Timestamp로 수신.
                               //  - 서비스/매퍼에서 LocalDateTime으로 변환해 DTO에 담는 것을 권장.
+
+  // ▼ 스냅샷 필드들
+  String getCat3();
+  String getCat3Name();
+  String getShortDesc1();
+  String getShortDesc2();
+  String getHashtagsJson();   // JSON 문자열로 받음
+  String getSimpleTagsJson(); // JSON 문자열로 받음
+                            
 }
