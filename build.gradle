@@ -24,16 +24,16 @@ repositories {
 }
 
 dependencies {
-    // Lombok
+    // Lombok (먼저 처리되어야 함)
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-
-    // Lombok ↔ MapStruct 바인딩
-    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-
-    // MapStruct
+    
+    // MapStruct (Lombok 이후 처리)
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    
+    // Lombok ↔ MapStruct 바인딩 (마지막에 추가)
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
 	
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
