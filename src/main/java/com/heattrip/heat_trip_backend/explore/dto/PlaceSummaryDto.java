@@ -12,6 +12,8 @@ public class PlaceSummaryDto {
     private Long contentid;
     private String title;
 
+    private Integer contentTypeId; // 콘텐츠 타입 ID [0831 추가]
+
     // Flutter와 통일
     private String addr1;
     private String addr2;

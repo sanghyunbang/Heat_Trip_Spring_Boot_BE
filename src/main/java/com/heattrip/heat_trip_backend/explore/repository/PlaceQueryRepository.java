@@ -39,6 +39,7 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
           p.addr1 AS addr1,          -- 프로젝션: getAddr1() (추가 [0822])
           p.addr2 AS addr2,          -- 프로젝션: getAddr2() (추가 [0822])
           p.firstimage2 AS firstimage2, -- 프로젝션: getFirstimage2() (추가 [0822])
+          p.contenttypeid AS contentTypeId, -- 프로젝션: getContentTypeId() (추가 [0822])
           
           /* 스냅샷 추가 [0825]*/
           s.cat3         AS cat3,            -- getCat3()
