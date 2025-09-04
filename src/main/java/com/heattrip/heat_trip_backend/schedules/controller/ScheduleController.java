@@ -93,32 +93,32 @@ public ResponseEntity<?> getMySchedules(HttpServletRequest request) {
     }
 
     // --------------유저정보[닉네임 / 본명]
-    @GetMapping("/getuser")
-    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
-    String authHeader = request.getHeader("Authorization");
-    System.out.println("GetUser 진입");
-
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return ResponseEntity.status(401).body("getUser clss : 인증 토큰이 없습니다.");
-    }
-
-    String token = authHeader.substring(7); // "Bearer " 제거
-
-    if (!jwtProvider.validateToken(token)) {
-        return ResponseEntity.status(401).body("유효하지 않은 토큰입니다.");
-    }
-
-    String userId = jwtProvider.getUserIdFromToken(token); // subject에 저장된 값 (예: email 또는 userId)
-
-    // userService를 통해 사용자 조회
-    User user = userService.findByEmail(userId); // or findById(userId) depending on what subject stores
-
-    if (user == null) {
-        return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
-    }
-
-    return ResponseEntity.ok(user);
-}
+//    @GetMapping("/getuser")
+//    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
+//    String authHeader = request.getHeader("Authorization");
+//    System.out.println("GetUser 진입");
+//
+//    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//        return ResponseEntity.status(401).body("getUser clss : 인증 토큰이 없습니다.");
+//    }
+//
+//    String token = authHeader.substring(7); // "Bearer " 제거
+//
+//    if (!jwtProvider.validateToken(token)) {
+//        return ResponseEntity.status(401).body("유효하지 않은 토큰입니다.");
+//    }
+//
+//    String userId = jwtProvider.getUserIdFromToken(token); // subject에 저장된 값 (예: email 또는 userId)
+//
+//    // userService를 통해 사용자 조회
+//    User user = userService.findByEmail(userId); // or findById(userId) depending on what subject stores
+//
+//    if (user == null) {
+//        return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+//    }
+//
+//    return ResponseEntity.ok(user);
+//}
 
 // --------------수정
 @PutMapping("/schedules/{scheduleId}")

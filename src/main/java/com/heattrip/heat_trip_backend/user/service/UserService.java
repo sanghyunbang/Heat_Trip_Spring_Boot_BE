@@ -2,7 +2,7 @@ package com.heattrip.heat_trip_backend.user.service;
 
 import java.time.LocalDateTime;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.heattrip.heat_trip_backend.user.dto.UpdateProfileRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -57,9 +57,55 @@ public class UserService {
         return jwtProvider.createAccessToken(user.getEmail(), "ROLE_USER");
 
     }
+
+    // email로 사용자 조회
     public User findByEmail(String email) {
     return userRepository.findByEmail(email)
-            .orElse(null); // 또는 .orElseThrow(...)로 에러 던져도 됨
-}
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
+
+    // 사용자 정보 수정
+    public User updateProfile(String email, UpdateProfileRequest req) {
+        User u = findByEmail(email);
+
+        if (req.getName() != null && !req.getName().isBlank()) {
+            u.setName(req.getName().trim());
+        }
+        if (req.getNickname() != null && !req.getNickname().isBlank()) {
+            u.setNickname(req.getNickname().trim());
+        }
+        if (req.getGender() != null && !req.getGender().isBlank()) {
+            String g = req.getGender().trim().toUpperCase();
+            switch (g) {
+                case "FEMALE" -> u.setGender(User.Gender.FEMALE);
+                case "MALE"   -> u.setGender(User.Gender.MALE);
+                default       -> u.setGender(User.Gender.OTHER);
+            }
+        }
+        if (req.getAge() != null) {
+            u.setAge(req.getAge());
+        }
+        if (req.getTravelType() != null) {
+            u.setTravelType(req.getTravelType());
+        }
+        if (req.getImageUrl() != null) {
+            u.setImageUrl(req.getImageUrl());
+        }
+
+        // @PreUpdate가 updatedAt 갱신
+        return userRepository.save(u);
+    }
+
+    // 이미 프론트가 잘 불러오고 있다 해도, 백엔드에서 토큰만으로 식별하는 패턴이 더 안전하고 표준적 → 보안↑
+    // 클라이언트가 바디/쿼리로 보내는 이메일을 믿지 않고, 서버가 JWT에서 주체(email)를 확인해 당사자 계정만 읽고/수정하려는 목적
+    public String emailFromAuth(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid Authorization header");
+        }
+        String token = authHeader.substring(7);
+
+        return jwtProvider.getUserIdFromToken(token);
+    }
+
 
 }

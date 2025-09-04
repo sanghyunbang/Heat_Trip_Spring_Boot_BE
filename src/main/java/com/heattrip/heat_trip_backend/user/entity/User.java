@@ -44,10 +44,20 @@ public class User {
     private LocalDateTime createdAt; // 생성일
     private LocalDateTime updatedAt; // 수정일
 
-    // 엔티티가 수정되기 전 자동으로 실행
-    @PrePersist // 엔티티가 처음 저장되기 전에 실행
+//    // 엔티티가 수정되기 전 자동으로 실행
+//    @PrePersist // 엔티티가 처음 저장되기 전에 실행
+//    public void prePersist() {
+//        this.updatedAt = LocalDateTime.now(); // 현재 시간으로 수정일 설정
+//    }
+    @PrePersist
     public void prePersist() {
-        this.updatedAt = LocalDateTime.now(); // 현재 시간으로 수정일 설정
+        this.createdAt = (this.createdAt == null) ? LocalDateTime.now() : this.createdAt;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     // Enum 선언 해놓기 : Gender는 세 값 중 하나만 가질 수 있음
