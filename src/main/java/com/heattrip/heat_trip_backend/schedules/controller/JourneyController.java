@@ -8,9 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.heattrip.heat_trip_backend.OAuth.jwt.JWTProvider;
+import com.heattrip.heat_trip_backend.S3.S3Service;
 import com.heattrip.heat_trip_backend.schedules.DTO.JourneyRequestDto;
 import com.heattrip.heat_trip_backend.schedules.DTO.JourneyResponseDto;
 import com.heattrip.heat_trip_backend.schedules.Service.JourneyService;
@@ -26,11 +29,13 @@ public class JourneyController {
     private final JourneyService journeyService;
     private final JWTProvider jwtProvider;
     private final UserService userService;
+    private final S3Service s3Service;
 
-    public JourneyController(JourneyService journeyService, JWTProvider jwtProvider, UserService userService) {
+    public JourneyController(JourneyService journeyService, JWTProvider jwtProvider, UserService userService, S3Service s3Service) {
         this.journeyService = journeyService;
         this.jwtProvider = jwtProvider;
         this.userService = userService;
+        this.s3Service = s3Service;
     }
 
     private User getUserFromRequest(HttpServletRequest request) {
@@ -59,6 +64,7 @@ public class JourneyController {
 
     @PostMapping("/entries")
     public ResponseEntity<?> postJourney(@RequestBody JourneyRequestDto dto, HttpServletRequest request) {
+        System.out.println("journey post 진입 \n    들어온 값 : " + dto);
         User user = getUserFromRequest(request);
         if (user == null) return ResponseEntity.status(401).body("Unauthorized");
 
@@ -77,5 +83,27 @@ public class JourneyController {
         Map<String, Object> stats = Map.of("entryCount", count);
         return ResponseEntity.ok(stats);
     }
+    //이미지 업로드 관련 메서드
+    @PostMapping("/entries/images")
+public ResponseEntity<?> uploadDiaryImages(
+    @RequestParam("images") List<MultipartFile> images,
+    HttpServletRequest request
+) {
+    User user = getUserFromRequest(request);
+    if (user == null) {
+        return ResponseEntity.status(401).body("Unauthorized");
+    }
+
+    try {
+        List<String> uploadedUrls = images.stream()
+            .map(s3Service::uploadFile)
+            .toList();
+
+        return ResponseEntity.ok(uploadedUrls);
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body("Image upload failed");
+    }
+}
+
 }
 
