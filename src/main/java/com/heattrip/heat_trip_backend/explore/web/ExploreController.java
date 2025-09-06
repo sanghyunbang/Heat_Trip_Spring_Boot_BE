@@ -108,23 +108,23 @@ public class ExploreController {
         @RequestParam(name = "sigungucode", required = false) Integer sigungucode,
         @RequestParam(name = "cat1",        required = false) String  cat1,
         @RequestParam(name = "cat2",        required = false) String  cat2,
-        @RequestParam(name = "cat3",        required = false) String  cat3,
+        @RequestParam(name = "cat3",        required = false) String  cat3Csv, 
         @RequestParam(name = "cursor",      required = false) String  cursor,
         @RequestParam(name = "size",        defaultValue = "20") @Min(1) @Max(100) int size
     ) {
         log.info("[GET] /api/explore/places/scroll?area={}&sigungu={}&cat1={}&cat2={}&cat3={}&cursor='{}'&size={}",
-                 areacode, sigungucode, cat1, cat2, cat3, cursor, size);     // ⬅ 추가
+                 areacode, sigungucode, cat1, cat2, cat3Csv, cursor, size);     // ⬅ 추가
 
         var cond = PlaceSearchCond.builder()
             .areacode(areacode).sigungucode(sigungucode)
-            .cat1(cat1).cat2(cat2).cat3(cat3)
+            .cat1(cat1).cat2(cat2).cat3(cat3Csv) // Csv를 그대로 cond에 넣음 -> Service에서 리스트로 바꿔서 담을 예정
             .build();
 
         try {
             return service.scroll(cond, cursor, size);  // ⬅ 에러 발생 지점
         } catch (Exception e) {
             log.error("scroll() failed: area={} sigungu={} cat1={} cat2={} cat3={} cursor='{}' size={}",
-                      areacode, sigungucode, cat1, cat2, cat3, cursor, size, e); // ⬅ 스택 출력
+                      areacode, sigungucode, cat1, cat2, cat3Csv, cursor, size, e); // ⬅ 스택 출력
             throw e; // 전역 핸들러로 전달
         }
     }

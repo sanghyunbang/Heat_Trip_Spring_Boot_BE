@@ -79,15 +79,27 @@ public class ExploreService {
      * - 장점: 임의 페이지 점프, 총 개수(totalElements) 제공 쉬움.
      * - 단점: page가 커질수록 OFFSET 스캔 비용 증가(대용량 비추천).
      */
+
+    // Csv -> 리스트화
+    private List<String> parseCsvToList(String csv){
+        if (csv == null || csv.isBlank()) return null;
+        return java.util.Arrays.stream(csv.split(","))
+            .map(String::trim)
+            .filter(s-> !s.isEmpty())
+            .distinct()
+            .toList();
+    }
     public PageResponse<PlaceSummaryDto> list(PlaceSearchCond c, int page, int size) {
         int safeSize = Math.max(1, Math.min(size, 100)); // ← 안전장치: 최소 1, 최대 100(과도한 page size 방지)
         var sort = Sort.by(Sort.Order.desc("createdtime"), Sort.Order.desc("contentid")); // ← 안정 정렬(동시간대 contentid로 확정)
         var pageable = PageRequest.of(Math.max(page, 0), safeSize, sort);                  // ← page 하한 0 보정
 
+        List<String> cat3List = parseCsvToList(c.getCat3());
+
         // JPQL에서 new PlaceSummaryDto(...) 로 직접 생성해서 반환 → 여기서 별도 매핑 없음
         Page<PlaceSummaryDto> p = repo.findSummaries(
             c.getAreacode(), c.getSigungucode(),
-            c.getCat1(), c.getCat2(), c.getCat3(),
+            c.getCat1(), c.getCat2(), cat3List,
             pageable
         );
 

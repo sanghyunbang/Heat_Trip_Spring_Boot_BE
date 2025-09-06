@@ -56,7 +56,7 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
         AND (:sigungucode IS NULL OR p.sigungucode = :sigungucode)       -- 시군구 코드 필터(선택)
         AND (:cat1 IS NULL OR p.cat1 = :cat1)                            -- 카테고리1 필터(선택)
         AND (:cat2 IS NULL OR p.cat2 = :cat2)                            -- 카테고리2 필터(선택)
-        AND (:cat3 IS NULL OR p.cat3 = :cat3)                            -- 카테고리3 필터(선택)
+        AND (:cat3Csv IS NULL OR FIND_IN_SET(p.cat3, :cat3Csv) > 0)                        -- 카테고리3 필터(선택)
         AND (
           :afterCreated IS NULL                                           -- 첫 페이지: 커서가 없으면 최신부터 시작
           OR p.createdtime < :afterCreated                                -- 이전 페이지 마지막 createdtime 보다 "더 과거(작은)" 행
@@ -73,7 +73,7 @@ public interface PlaceQueryRepository extends JpaRepository<Place, Long> {
         @Param("sigungucode") Integer sigungucode,    // 선택적 시군구 필터(Null 허용)
         @Param("cat1") String cat1,                   // 선택적 카테고리1
         @Param("cat2") String cat2,                   // 선택적 카테고리2
-        @Param("cat3") String cat3,                   // 선택적 카테고리3
+        @Param("cat3Csv") String cat3Csv,                   // 선택적 카테고리3
         @Param("afterCreated") Timestamp afterCreated,// 커서: 이전 페이지 마지막 행의 createdtime (첫 페이지면 null)
         @Param("afterId") Long afterId,               // 커서: 이전 페이지 마지막 행의 contentid (동시간대 정렬 안정용)
         Pageable pageable                             // 페이지 크기 제한 담당(보통 PageRequest.of(0, size)로 offset=0 권장)

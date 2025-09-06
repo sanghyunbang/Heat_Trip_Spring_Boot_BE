@@ -4,6 +4,8 @@ package com.heattrip.heat_trip_backend.explore.repository;
 import com.heattrip.heat_trip_backend.tour.domain.Place;
 import com.heattrip.heat_trip_backend.explore.dto.PlaceSummaryDto;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -40,7 +42,9 @@ public interface ExplorePlaceRepository extends JpaRepository<Place, Long>{
       and (:sigungucode is null or p.sigungucode = :sigungucode)
       and (:cat1 is null or p.cat1 = :cat1)
       and (:cat2 is null or p.cat2 = :cat2)
-      and (:cat3 is null or p.cat3 = :cat3)
+      and (:cat3List is null or p.cat3 in :cat3List) 
+      order by p.createdtime desc, p.contentid desc
+
         """)
     /**
      * 요약 리스트 조회(JPQL → DTO 직생성, Offset 페이지네이션).
@@ -68,7 +72,7 @@ public interface ExplorePlaceRepository extends JpaRepository<Place, Long>{
         @Param("sigungucode") Integer sigungucode,
         @Param("cat1") String cat1,
         @Param("cat2") String cat2,
-        @Param("cat3") String cat3,
+        @Param("cat3List") List<String> cat3List,
         Pageable pageable);
     
 }
