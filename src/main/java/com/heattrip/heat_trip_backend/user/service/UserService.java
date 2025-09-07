@@ -13,6 +13,7 @@ import com.heattrip.heat_trip_backend.user.entity.User;
 import com.heattrip.heat_trip_backend.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -58,13 +59,13 @@ public class UserService {
 
     }
 
-    // email로 사용자 조회
+    /** email로 사용자 조회 */
     public User findByEmail(String email) {
     return userRepository.findByEmail(email)
             .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 
-    // 사용자 정보 수정
+    /** 사용자 정보 수정 */
     public User updateProfile(String email, UpdateProfileRequest req) {
         User u = findByEmail(email);
 
@@ -107,5 +108,13 @@ public class UserService {
         return jwtProvider.getUserIdFromToken(token);
     }
 
+    /** 사용자 삭제 (회원탈퇴) */
+    @Transactional
+    public void deleteMe(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+        userRepository.delete(user);
+        // 필요 시: userRepository.flush();
+    }
 
 }

@@ -54,4 +54,12 @@ public class AuthController {
         return ResponseEntity.ok(UserResponse.from(updated));
     }
 
+    /** 내 계정 삭제 */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMe(@RequestHeader("Authorization") String authHeader) {
+        String email = userService.emailFromAuth(authHeader); // 토큰 → 이메일
+        userService.deleteMe(email);
+        return ResponseEntity.noContent().build(); // 204
+    }
+
 }

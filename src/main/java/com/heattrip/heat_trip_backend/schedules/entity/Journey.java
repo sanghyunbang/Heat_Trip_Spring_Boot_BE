@@ -4,6 +4,8 @@ import com.heattrip.heat_trip_backend.user.entity.User;
 import jakarta.persistence.*;
 
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,10 +25,13 @@ public class Journey {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)  // DB에서 연쇄 삭제
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)  // DB에서 연쇄 삭제 -> 일정 삭제하면 일기도 삭제
+//    @OnDelete(action = OnDeleteAction.SET_NULL) // 🔁 일정 삭제해도 일기는 남게
     private Schedule schedule;
 
     private String title;

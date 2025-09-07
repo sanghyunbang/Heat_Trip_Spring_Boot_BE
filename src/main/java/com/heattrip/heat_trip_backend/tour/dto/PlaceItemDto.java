@@ -2,6 +2,7 @@ package com.heattrip.heat_trip_backend.tour.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.*;
@@ -27,7 +28,12 @@ public class PlaceItemDto {
     private Integer areacode, sigungucode, lDongRegnCd, lDongSignguCd;
     private String tel;
     private String contenttypeid;
+
+//    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyyMMddHHmmss") // 예: "20230918141849"
     private LocalDateTime createdtime;
+
+//    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyyMMddHHmmss")
     private LocalDateTime modifiedtime;
+
     private String mlevel;
 }
