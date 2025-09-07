@@ -2,13 +2,16 @@ package com.heattrip.heat_trip_backend.schedules.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.springframework.http.MediaType;                    // ← consumes에 필요
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+// import org.springframework.web.bind.annotation.RequestParam; // @RequestPart로 대체 가능
+import org.springframework.web.bind.annotation.RequestPart;  // ← multipart에 권장
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +23,7 @@ import com.heattrip.heat_trip_backend.schedules.Service.JourneyService;
 import com.heattrip.heat_trip_backend.schedules.entity.Journey;
 import com.heattrip.heat_trip_backend.user.entity.User;
 import com.heattrip.heat_trip_backend.user.service.UserService;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -45,7 +49,7 @@ public class JourneyController {
         String token = authHeader.substring(7);
         if (!jwtProvider.validateToken(token)) return null;
 
-        String userId = jwtProvider.getUserIdFromToken(token);
+        String userId = jwtProvider.getUserIdFromToken(token); // 토큰에서 e-mail(or id) 추출
         return userService.findByEmail(userId);
     }
 
@@ -64,7 +68,6 @@ public class JourneyController {
 
     @PostMapping("/entries")
     public ResponseEntity<?> postJourney(@RequestBody JourneyRequestDto dto, HttpServletRequest request) {
-        System.out.println("journey post 진입 \n    들어온 값 : " + dto);
         User user = getUserFromRequest(request);
         if (user == null) return ResponseEntity.status(401).body("Unauthorized");
 
@@ -78,32 +81,64 @@ public class JourneyController {
         if (user == null) return ResponseEntity.status(401).body("Unauthorized");
 
         List<Journey> entries = journeyService.getJourneysByUser(user);
-        int count = entries.size();
-
-        Map<String, Object> stats = Map.of("entryCount", count);
+        Map<String, Object> stats = Map.of("entryCount", entries.size());
         return ResponseEntity.ok(stats);
     }
-    //이미지 업로드 관련 메서드
-    @PostMapping("/entries/images")
-public ResponseEntity<?> uploadDiaryImages(
-    @RequestParam("images") List<MultipartFile> images,
-    HttpServletRequest request
-) {
-    User user = getUserFromRequest(request);
-    if (user == null) {
-        return ResponseEntity.status(401).body("Unauthorized");
+
+    // ─────────────────────────────────────────────────────────────
+    // 이미지 업로드 (multipart/form-data)
+    //  - @RequestPart 사용: 복합 타입/파일 받을 때 명시적이며 오류 메시지가 더 낫습니다.
+    //  - 프런트는 FormData에 'images' 필드로 여러 파일을 담아 전송합니다.
+    // ─────────────────────────────────────────────────────────────
+
+    // 1) DTO (S3 에 UPLOAD관련 임의 DTO)
+    public record UploadResult(
+        String fileName,
+        String contentType,
+        long size,
+        String key,
+        String url
+    ) {}
+    
+    @PostMapping(path = "/entries/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadDiaryImages(
+        @RequestPart("images") List<MultipartFile> images,
+        HttpServletRequest request
+    ) {
+        User user = getUserFromRequest(request);
+        if (user == null) return ResponseEntity.status(401).body("Unauthorized");
+        if (images == null || images.isEmpty()) return ResponseEntity.badRequest().body("No files provided");
+
+        try {
+            List<UploadResult> results = images.stream()
+                .filter(f -> !f.isEmpty())
+                .map(f -> {
+                    String url = s3Service.uploadFile(f, user.getId().toString());
+                    //  named args 금지, 올바른 regex 사용
+                    String key = url.replaceFirst("^https?://[^/]+/", "");
+                    return new UploadResult(
+                        f.getOriginalFilename(),
+                        f.getContentType(),
+                        f.getSize(),
+                        key,
+                        url
+                    );
+                })
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(results);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Image upload failed");
+        }
     }
 
-    try {
-        List<String> uploadedUrls = images.stream()
-            .map(s3Service::uploadFile)
-            .toList();
-
-        return ResponseEntity.ok(uploadedUrls);
-    } catch (Exception e) {
-        return ResponseEntity.status(500).body("Image upload failed");
-    }
+    // (향후) JSON + 파일 동시 업로드가 필요할 때:
+    // @PostMapping(path="/entries/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // public ResponseEntity<?> createJourneyWithImages(
+    //     @RequestPart("dto") JourneyRequestDto dto,
+    //     @RequestPart(value = "images", required = false) List<MultipartFile> images,
+    //     HttpServletRequest request
+    // ) { ... }
 }
-
-}
-
