@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import com.heattrip.heat_trip_backend.tour.service.PlaceImportService;
 import com.heattrip.heat_trip_backend.tour.service.TraitSnapshotService;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
 /**

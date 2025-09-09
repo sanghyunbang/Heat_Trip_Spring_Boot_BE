@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
  * 미디어 도메인 서비스.
  * - 저장소(FileStorage) + JPA 리포지토리 결합
  * - 권한/연결(refType/refId) 처리
+ * - 엔티티 변경( key → objectKey / 컬럼: media_key ) 반영 ①
  */
 @Service
 public class MediaService {
@@ -31,22 +32,32 @@ public class MediaService {
         return files.stream()
             .filter(f -> f != null && !f.isEmpty())
             .map(f -> {
-                StoredObject so = storage.upload(f, UploadRequest.of(cat, ownerId).withSubPath(refId));
-                MediaObject m = MediaObject.of(cat, ownerId, refType, refId,
-                        so.key(), f.getOriginalFilename(), f.getContentType(), f.getSize());
+                // 업로드 수행 → S3 key/메타를 가진 StoredObject 반환 가정 ②
+                StoredObject so = storage.upload(
+                    f,
+                    UploadRequest.of(cat, ownerId).withSubPath(refId)
+                );
+                // 엔티티 팩토리: objectKey 사용(과거 key 아님) ①
+                MediaObject m = MediaObject.of(
+                    cat, ownerId, refType, refId,
+                    so.key(),                       // ← String S3 object key
+                    f.getOriginalFilename(),
+                    f.getContentType(),
+                    f.getSize()
+                );
                 return repo.save(m);
             })
             .collect(Collectors.toList()); // JDK < 16 호환
     }
 
     /** R: 공개 URL */
-    public String publicUrl(String key) {
-        return storage.publicUrl(key);
+    public String publicUrl(String objectKey) {              // ← Long → String 변경 ③
+        return storage.publicUrl(objectKey);
     }
 
     /** R: 프리사인드 URL */
-    public String presignedUrl(String key, Duration ttl) {
-        return storage.presignedUrl(key, ttl).toString();
+    public String presignedUrl(String objectKey, Duration ttl) {
+        return storage.presignedUrl(objectKey, ttl).toString();
     }
 
     /** R: refType/refId로 이미지 목록 조회 (컨트롤러에서 사용) */
@@ -59,12 +70,19 @@ public class MediaService {
     @Transactional
     public MediaObject replace(Long mediaId, MultipartFile file, String ownerId) {
         MediaObject m = repo.findById(mediaId).orElseThrow();
-        if (!m.getOwnerId().equals(ownerId)) throw new IllegalArgumentException("권한 없음");
+        if (!m.getOwnerId().equals(ownerId)) {
+            throw new IllegalArgumentException("권한 없음");
+        }
 
-        StoredObject neo = storage.replace(m.getKey(), file,
-                UploadRequest.of(m.getCategory(), ownerId).withSubPath(m.getRefId()));
+        // 기존 objectKey로 교체 업로드 수행 ④
+        StoredObject neo = storage.replace(
+            m.getObjectKey(),                                  // ← 변경
+            file,
+            UploadRequest.of(m.getCategory(), ownerId).withSubPath(m.getRefId())
+        );
 
-        m.setKey(neo.key());
+        // 엔티티 메타 갱신 (objectKey/콘텐츠타입/사이즈)
+        m.setObjectKey(neo.key());                            // ← 변경
         m.setContentType(neo.contentType());
         m.setSize(neo.size());
         return repo.save(m);
@@ -74,8 +92,10 @@ public class MediaService {
     @Transactional
     public void delete(Long mediaId, String ownerId) {
         MediaObject m = repo.findById(mediaId).orElseThrow();
-        if (!m.getOwnerId().equals(ownerId)) throw new IllegalArgumentException("권한 없음");
-        storage.delete(m.getKey());
+        if (!m.getOwnerId().equals(ownerId)) {
+            throw new IllegalArgumentException("권한 없음");
+        }
+        storage.delete(m.getObjectKey());                     // ← 변경
         repo.delete(m);
     }
 
@@ -83,11 +103,13 @@ public class MediaService {
     @Transactional
     public void deleteForJourney(Long mediaId, String journeyId, String ownerId) {
         MediaObject m = repo.findById(mediaId).orElseThrow();
-        if (!m.getOwnerId().equals(ownerId)) throw new IllegalArgumentException("권한 없음");
+        if (!m.getOwnerId().equals(ownerId)) {
+            throw new IllegalArgumentException("권한 없음");
+        }
         if (!"JOURNEY".equals(m.getRefType()) || !journeyId.equals(m.getRefId())) {
             throw new IllegalArgumentException("잘못된 참조(journeyId 불일치)");
         }
-        storage.delete(m.getKey());
+        storage.delete(m.getObjectKey());                     // ← 변경
         repo.delete(m);
     }
 
@@ -95,8 +117,14 @@ public class MediaService {
     @Transactional
     public void deleteByRef(String refType, String refId, String ownerId) {
         var list = repo.findByRefTypeAndRefId(refType, refId);
-        var own = list.stream().filter(m -> ownerId.equals(m.getOwnerId())).collect(Collectors.toList());
-        storage.deleteAll(own.stream().map(MediaObject::getKey).collect(Collectors.toList()));
+        var own = list.stream()
+                      .filter(m -> ownerId.equals(m.getOwnerId()))
+                      .collect(Collectors.toList());
+
+        // 배치 삭제 시에도 objectKey 사용 ⑤
+        storage.deleteAll(
+            own.stream().map(MediaObject::getObjectKey).collect(Collectors.toList())
+        );
         repo.deleteAll(own);
     }
 }

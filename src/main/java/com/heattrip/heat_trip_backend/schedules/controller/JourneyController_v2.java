@@ -88,8 +88,8 @@ public class JourneyController_v2 {
         return list.stream()
             .map(m -> new MediaView(
                 m.getId(),
-                m.getKey(),
-                mediaService.publicUrl(m.getKey()), // 공개 배포 시 public URL, 비공개면 presignedUrl 사용
+                m.getObjectKey(),
+                mediaService.publicUrl(m.getObjectKey()), // 공개 배포 시 public URL, 비공개면 presignedUrl 사용
                 m.getContentType(),
                 m.getSize()
             ))
