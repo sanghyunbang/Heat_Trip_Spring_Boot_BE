@@ -1,9 +1,11 @@
 package com.heattrip.heat_trip_backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.http.HttpHeaders;
 
 
 @Configuration
@@ -21,6 +23,19 @@ public class WebClientConfig {
         return builder
                 .baseUrl("https://apis.data.go.kr/B551011/KorService2")
                 .exchangeStrategies(exchangeStrategies)
+                .build();
+    }
+
+    // Kakao Local API 전용 WebClient
+    @Bean("kakaoWebClient")
+    public WebClient kakaoWebClient(
+            WebClient.Builder builder,
+            @Value("${kakao.api.base-url}") String baseUrl,
+            @Value("${kakao.api.rest-key}") String restKey
+    ) {
+        return builder
+                .baseUrl(baseUrl) // https://dapi.kakao.com
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "KakaoAK " + restKey)
                 .build();
     }
 }
