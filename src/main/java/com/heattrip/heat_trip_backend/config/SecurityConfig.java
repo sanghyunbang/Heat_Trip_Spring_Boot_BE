@@ -25,7 +25,13 @@ import com.heattrip.heat_trip_backend.OAuth.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 
 // 기능 : Sping Security 설정을 구성하며, OAuth2 로그인 처리 및 JWT 필터 등록을 포함
-
+/**
+ * Spring Security 전역 설정.
+ * - 세션 대신 JWT 사용 → STATELESS
+ * - OAuth2 로그인 성공 시 커스텀 핸들러 사용
+ * - CORS: Flutter(Web) 개발 서버 등 허용
+ * - /api/curation/**: MVP 단계에서 인증 없이 접근 허용(permitAll)
+ */
 
 @Configuration
 @RequiredArgsConstructor
