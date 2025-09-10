@@ -8,8 +8,9 @@ import lombok.*;
  * - PK: contentid (BIGINT)
  * - 이 엔티티는 추천에 필요한 최소 컬럼만 매핑(필요시 컬럼 추가 매핑)
  */
-@Entity
-@Table(name = "places")
+
+@Entity(name = "CurationPlace")     // 엔티티 "이름"을 바꿈 (테이블명과 별개)
+@Table(name = "places")             // 실제 테이블명은 동일
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Place {
 

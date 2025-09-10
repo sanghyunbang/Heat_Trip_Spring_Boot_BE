@@ -9,7 +9,7 @@ import lombok.*;
  * - feature(−1..1) → 서비스에서 0..1로 변환해 사용
  * - conf_*: 0..1 (증거 신뢰도), n_reviews/n_blogs: 볼륨 계산에 활용
  */
-@Entity
+@Entity(name = "CurationPlaceFeatures")
 @Table(name = "place_features")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class PlaceFeatures {

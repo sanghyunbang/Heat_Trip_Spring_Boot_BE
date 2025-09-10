@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ScoringService {
 
-    private final PlaceRepository placeRepo;
-    private final PlaceFeaturesRepository featuresRepo;
+    private final CurationPlaceRepository placeRepo;
+    private final CurationPlaceFeaturesRepository featuresRepo;
     private final PlaceStarRatingRepository ratingRepo;
 
     // ---- 하이퍼파라미터(튜닝 포인트) ----
