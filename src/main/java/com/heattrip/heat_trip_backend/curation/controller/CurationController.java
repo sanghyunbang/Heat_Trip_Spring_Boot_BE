@@ -24,4 +24,10 @@ public class CurationController {
     public List<PlaceScoreDTO> rank(@RequestBody RankRequest req) {
         return scoring.rank(req);
     }
+
+    // 추가: 카테고리 집계
+    @PostMapping("/categories")
+    public List<CategoryScoreDTO> categories(@RequestBody RankRequest req) {
+        return scoring.categories(req);
+    }
 }

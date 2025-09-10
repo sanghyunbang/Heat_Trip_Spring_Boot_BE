@@ -3,6 +3,8 @@ package com.heattrip.heat_trip_backend.curation.service;
 import com.heattrip.heat_trip_backend.curation.dto.*;
 import com.heattrip.heat_trip_backend.curation.entity.*;
 import com.heattrip.heat_trip_backend.curation.repository.*;
+
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,10 @@ public class ScoringService {
     private final CurationPlaceRepository placeRepo;
     private final CurationPlaceFeaturesRepository featuresRepo;
     private final PlaceStarRatingRepository ratingRepo;
+
+    // 카테고리 관련 
+    private final EmotionCategoryRepository categoryRepo;
+    private final Cat3CategoryMappingRepository mappingRepo;
 
     // ---- 하이퍼파라미터(튜닝 포인트) ----
     private static final double LAMBDA_G = 0.7, LAMBDA_S = 0.3; // goal vs state
@@ -168,6 +174,71 @@ public class ScoringService {
         if (l1 == 0) l1 = 1.0;
         return new Weights(q/l1, n/l1, sp/l1, so/l1, ad/l1, cu/l1);
     }
+
+
+
+    /** 카테고리 상위 N 집계 (각 카테고리별 대표점수 + 대표 장소들) */
+    @Transactional(readOnly = true)
+    public List<CategoryScoreDTO> categories(RankRequest req) {
+        // 1) 먼저 장소별 점수 전체 계산
+        List<PlaceScoreDTO> ranked = rank(req); // 점수 계산 재사용
+
+        // 2) cat3 -> categoryId 매핑 로딩
+        //    rank에서 내려온 place의 cat3 set만 뽑아 필요한 매핑만 조회
+        Set<String> cat3Set = ranked.stream()
+                .map(PlaceScoreDTO::getCat3Code)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<String, Integer> cat3ToCatId = mappingRepo.findByCat3CodeIn(cat3Set)
+                .stream().collect(Collectors.toMap(Cat3CategoryMapping::getCat3Code, Cat3CategoryMapping::getCategoryId));
+
+        // 3) 카테고리별 그룹핑
+        Map<Integer, List<PlaceScoreDTO>> byCat = new HashMap<>();
+        for (PlaceScoreDTO p : ranked) {
+            Integer catId = cat3ToCatId.get(p.getCat3Code());
+            if (catId == null) continue; // 매핑 없는 곳은 제외
+            byCat.computeIfAbsent(catId, k -> new ArrayList<>()).add(p);
+        }
+
+        // 4) 메타 로드(이름/이모지)
+        Map<Integer, EmotionCategory> meta = categoryRepo.findAll().stream()
+                .collect(Collectors.toMap(EmotionCategory::getId, x -> x));
+
+        // 5) 카테고리 점수 산출: finalScore 평균 (원하면 가중평균 등으로 바꿔도 됨)
+        List<CategoryScoreDTO> out = new ArrayList<>();
+        for (Map.Entry<Integer, List<PlaceScoreDTO>> e : byCat.entrySet()) {
+            Integer catId = e.getKey();
+            List<PlaceScoreDTO> places = e.getValue();
+
+            // 대표 장소 상위 6개
+            List<PlaceScoreDTO> topPlaces = places.stream()
+                    .sorted(Comparator.comparingDouble(PlaceScoreDTO::getFinalScore).reversed())
+                    .limit(6)
+                    .toList();
+
+            double avgFinal = places.stream()
+                    .mapToDouble(PlaceScoreDTO::getFinalScore)
+                    .average().orElse(0);
+
+            EmotionCategory mc = meta.get(catId);
+            out.add(CategoryScoreDTO.builder()
+                    .categoryId(catId)
+                    .categoryName(mc != null ? mc.getName() : ("CAT#" + catId))
+                    .emoji(mc != null ? mc.getEmoji() : "🗺️")
+                    .score(avgFinal)
+                    .topPlaces(topPlaces)
+                    .build());
+        }
+
+        // 6) 카테고리 상위 N (기본 6)
+        int topN = (req.getTopN() != null && req.getTopN() > 0) ? req.getTopN() : 6;
+        return out.stream()
+                .sorted(Comparator.comparingDouble(CategoryScoreDTO::getScore).reversed())
+                .limit(topN)
+                .toList();
+    }
+
 
     // 내부 유틸
     private static double nz(Double v) { return v == null ? 0.0 : v; }
