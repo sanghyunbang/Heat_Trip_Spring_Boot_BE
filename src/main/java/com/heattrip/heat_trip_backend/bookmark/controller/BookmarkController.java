@@ -55,9 +55,9 @@ public class BookmarkController {
         return ResponseEntity.noContent().build();
     }
 
-    /* -------- 이미지: 단건/배치 -------- */
+    /* -------- 이미지/메타: 단건/배치 -------- */
 
-    /** 단건: /bookmarks/img/{contentId} → { contentId, firstimage, imageUrl } */
+    /** 단건: /bookmarks/img/{contentId} → { contentId, firstimage, imageUrl, contentTypeId } */
     @GetMapping("/img/{contentId}")
     public ResponseEntity<Map<String, Object>> getOne(@PathVariable String contentId) {
         return ResponseEntity.of(
@@ -65,33 +65,51 @@ public class BookmarkController {
                         .map(p -> {
                             String first = p.getFirstimage();
                             String second = p.getFirstimage2();
-                            String imageUrl = (first != null && !first.isBlank()) ? first : (second == null ? "" : second);
+                            String imageUrl = (first != null && !first.isBlank())
+                                    ? first
+                                    : (second == null ? "" : second);
 
-                            return Map.<String, Object>of(
-                                    "contentId", String.valueOf(p.getContentid()),
-                                    "firstimage", first == null ? "" : first,
-                                    "imageUrl", imageUrl
-                            );
+                            Map<String, Object> body = new HashMap<>();
+                            body.put("contentId", String.valueOf(p.getContentid()));
+                            body.put("firstimage", first == null ? "" : first);
+                            body.put("imageUrl", imageUrl);
+                            // ★ contentTypeId 포함(숫자)
+                            if (p.getContenttypeid() != null) {
+                                body.put("contentTypeId", p.getContenttypeid());
+                            }
+                            return body;
                         })
         ); // Optional → 200/404 자동 처리
     }
 
     /** 배치: POST /bookmarks/images:batchResolve { contentIds: [...] } */
     @PostMapping("/images:batchResolve")
-    public ResponseEntity<List<Map<String, String>>> batch(@RequestBody Map<String, Object> req) {
+    public ResponseEntity<List<Map<String, Object>>> batch(@RequestBody Map<String, Object> req) {
         @SuppressWarnings("unchecked")
         List<Object> raw = (List<Object>) req.getOrDefault("contentIds", List.of());
         List<String> ids = raw.stream().map(String::valueOf).toList();
 
-        Map<String, String> map = bookmarkService.findImagesByContentIds(ids);
+        // ★ 이미지 + contentTypeId를 함께 조회
+        Map<String, Map<String, Object>> metaMap = bookmarkService.findMetaByContentIds(ids);
 
-        // 요청 순서를 유지해 응답
-        List<Map<String, String>> body = new ArrayList<>();
+        // 요청 순서를 유지해 응답 (contentTypeId 필수)
+        List<Map<String, Object>> body = new ArrayList<>();
         for (String id : ids) {
-            String url = map.get(id);
-            if (url != null && !url.isBlank()) {
-                body.add(Map.of("contentId", id, "imageUrl", url));
+            Map<String, Object> meta = metaMap.get(id);
+            if (meta == null) continue;
+
+            Object ct = meta.get("contentTypeId");
+            if (!(ct instanceof Number)) {
+                // contentTypeId는 필수이므로 누락 시 스킵
+                continue;
             }
+            String imageUrl = Optional.ofNullable((String) meta.get("imageUrl")).orElse("");
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("contentId", id);
+            item.put("imageUrl", imageUrl);
+            item.put("contentTypeId", ((Number) ct).intValue());
+            body.add(item);
         }
         return ResponseEntity.ok(body);
     }

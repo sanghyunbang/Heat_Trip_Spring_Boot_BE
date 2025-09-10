@@ -46,46 +46,63 @@ public class BookmarkService {
         bookmarkRepository.deleteByUserAndContentId(user, contentId);
     }
 
-    /* -------------------- 이미지 조회 -------------------- */
+    /* -------------------- 이미지/메타 조회 -------------------- */
 
     /** 문자열 contentId → Long 파싱 후 Place 조회 */
     public Optional<Place> findByContentId(String contentId) {
         try {
             long id = Long.parseLong(contentId);
-            // Place의 @Id가 contentid 이므로 findById 사용
             return placeImgRepository.findById(id);
         } catch (NumberFormatException e) {
             return Optional.empty();
         }
     }
 
-    /** 배치: 여러 contentId → firstimage 맵(contentId → url) */
-    public Map<String, String> findImagesByContentIds(List<String> ids) {
-        if (ids == null || ids.isEmpty()) return Map.of();
+    /** ★ 신규: 여러 contentId → {imageUrl, contentTypeId} 메타 맵(키: contentId) */
+    public Map<String, Map<String, Object>> findMetaByContentIds(List<String> ids) {
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        if (ids == null || ids.isEmpty()) return result;
 
-        // String → Long (파싱 실패 제거)
         List<Long> longIds = ids.stream().map(s -> {
             try { return Long.parseLong(s); } catch (Exception e) { return null; }
         }).filter(Objects::nonNull).collect(Collectors.toList());
 
-        if (longIds.isEmpty()) return Map.of();
+        if (longIds.isEmpty()) return result;
 
-        // 한 번에 조회
         List<Place> rows = placeImgRepository.findAllById(longIds);
 
-        Map<String, String> out = new HashMap<>();
         for (Place p : rows) {
-            String url = preferFirstimage(p);
-            if (url != null && !url.isBlank()) {
-                out.put(String.valueOf(p.getContentid()), url);
+            String key = String.valueOf(p.getContentid());
+            String url = Optional.ofNullable(preferFirstimage(p)).orElse("");
+
+            Integer contentTypeId = toInt(p.getContenttypeid());
+
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("imageUrl", url);               // 빈 문자열 허용
+            if (contentTypeId != null) {
+                meta.put("contentTypeId", contentTypeId); // 숫자
             }
+            result.put(key, meta);
         }
-        return out;
+        return result;
     }
 
     private String preferFirstimage(Place p) {
         if (p.getFirstimage() != null && !p.getFirstimage().isBlank()) return p.getFirstimage();
         if (p.getFirstimage2() != null && !p.getFirstimage2().isBlank()) return p.getFirstimage2();
         return null;
+    }
+
+    // 👇 추가: 어떤 타입이 와도 int로 안전 변환
+    private Integer toInt(Object v) {
+        if (v == null) return null;
+        if (v instanceof Number n) return n.intValue();
+        try {
+            String s = v.toString().trim();
+            if (s.isEmpty()) return null;
+            return Integer.valueOf(s);
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 }
