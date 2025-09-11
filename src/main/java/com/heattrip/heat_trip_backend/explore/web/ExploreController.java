@@ -27,6 +27,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Explore 도메인의 REST 컨트롤러.
@@ -196,5 +197,29 @@ public class ExploreController {
     ) {
         FeedbackResponseDto res = emotionService.submitFeedback(contentId, request);
         return ResponseEntity.status(201).body(res);
+    }
+
+    // ★ 신규 포트/어댑터 검색
+    @GetMapping("/search")
+    public PageResponse<PlaceSummaryDto> search(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "contentTypeId", required = false) Integer contentTypeId,
+            @RequestParam(name = "cat3", required = false) String cat3,           // CSV
+            @RequestParam(name = "emotionCategoryId", required = false) Integer emotionCategoryId,
+            @RequestParam(name = "page", defaultValue = "0") Integer page,
+            @RequestParam(name = "size", defaultValue = "20") Integer size,
+            @RequestParam(name = "sort", required = false) String sort
+    ) {
+  List<String> cat3list = (cat3 == null || cat3.isBlank())
+        ? List.of()
+        : Stream.of(cat3.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList(); // Java 16 미만이면 .collect(Collectors.toList())
+
+        var cond = new com.heattrip.heat_trip_backend.explore.dto.search.PlaceSearchCond(
+                q, contentTypeId, cat3list, emotionCategoryId, page, size, sort
+        );
+        return service.searchAdvanced(cond);
     }
 }

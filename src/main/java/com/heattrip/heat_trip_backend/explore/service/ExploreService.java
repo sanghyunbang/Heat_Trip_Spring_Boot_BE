@@ -24,6 +24,10 @@ import com.heattrip.heat_trip_backend.explore.repository.ExplorePlaceRepository;
 import com.heattrip.heat_trip_backend.explore.repository.PlaceSummaryProjection;
 import com.heattrip.heat_trip_backend.tour.domain.Place;
 
+
+import com.heattrip.heat_trip_backend.explore.port.ExploreSearchPort;
+
+
 /**
  * Explore 도메인의 조회용 비즈니스 로직 계층.
  *
@@ -45,15 +49,20 @@ public class ExploreService {
     private final ExplorePlaceRepository repo;            // ← Offset 페이지네이션용(JPQL로 DTO 생성 반환)
     private final PlaceQueryRepository cursorRepo; // ← Cursor 페이지네이션용(네이티브 + Projection)
     private final PlaceMapper mapper;              // ← MapStruct 매퍼(컴파일타임 생성 코드로 고성능 매핑)
+    private final ExploreSearchPort searchPort;     // ★ 신규: 포트/어댑터
 
     public ExploreService(
         ExplorePlaceRepository repo,
         PlaceQueryRepository cursorRepo,
-        PlaceMapper mapper
+        PlaceMapper mapper,
+        ExploreSearchPort searchPort // ★ 추가 주입
+
     ) {
         this.repo = repo;
         this.cursorRepo = cursorRepo;
         this.mapper = mapper;
+        this.searchPort = searchPort; // ★ 저장
+
     }
 
     /** 
@@ -185,5 +194,16 @@ public class ExploreService {
 
         return new CursorPageResponse<>(items, nextCursor, hasNext);
     }
-
+    
+        /**
+     * 신규: 저결합 포트/어댑터 기반 "키워드/카테고리 검색"
+     * - 기존 메서드들과 충돌 피하기 위해 이름을 searchAdvanced 로 둡니다.
+     * - DTO 충돌을 피하려고 매개변수는 'search' 하위 패키지의 PlaceSearchCond 를 완전수형으로 사용. ※S-1
+     */
+    public PageResponse<PlaceSummaryDto> searchAdvanced(
+        com.heattrip.heat_trip_backend.explore.dto.search.PlaceSearchCond cond
+    ) {
+        // 어댑터(JPA Criteria)로 위임 → PageResponse<PlaceSummaryDto> 반환
+        return searchPort.search(cond);
+    }
 }

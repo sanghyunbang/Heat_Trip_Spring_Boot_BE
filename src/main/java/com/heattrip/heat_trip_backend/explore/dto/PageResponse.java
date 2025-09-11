@@ -33,6 +33,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public class PageResponse<T> {
 
+    public PageResponse(List<PlaceSummaryDto> content2, long total, int page2, int size2) {
+        //TODO Auto-generated constructor stub
+    }
+
     // 현재 페이지에 포함된 실제 데이터(요약/상세 DTO 등).
     // - 제네릭 T로 재사용성을 유지.
     private List<T> content;
