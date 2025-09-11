@@ -106,6 +106,7 @@ public class JourneyController_v2 {
     // ─────────────────────────────────────
     @GetMapping("/entries")
     public ResponseEntity<?> listMyJourneys(HttpServletRequest request) {
+        System.out.println("        Get Entries 진입        \n        들어온 값 : " + request);
         User user = requireUser(request);
         List<Journey> journeys = journeyService.getJourneysByUser(user);
 
@@ -131,6 +132,7 @@ public class JourneyController_v2 {
     // ─────────────────────────────────────
     @PostMapping("/entries")
     public ResponseEntity<?> createJourney(@RequestBody JourneyRequestDto dto, HttpServletRequest request) {
+        System.out.println("           entrys 진입완료 들어온 값 : \n" + dto);
         User user = requireUser(request);
         Journey saved = journeyService.saveJourney(dto, user);
         return ResponseEntity.ok(new JourneyWithImagesResponse(new JourneyResponseDto(saved), List.of()));

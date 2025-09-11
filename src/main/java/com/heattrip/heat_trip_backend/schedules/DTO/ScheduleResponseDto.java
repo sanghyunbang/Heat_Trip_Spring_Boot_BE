@@ -18,6 +18,8 @@ public class ScheduleResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private int journeyCount; //scheduleId 값을 가지는 journey 갯수
+
     public ScheduleResponseDto(Schedule schedule) {
         this.scheduleId = schedule.getScheduleId();
         this.title = schedule.getTitle();
@@ -27,5 +29,10 @@ public class ScheduleResponseDto {
         this.userNickname = schedule.getUser().getNickname();
         this.createdAt = schedule.getCreatedAt();
         this.updatedAt = schedule.getUpdatedAt();
+    }
+
+    public ScheduleResponseDto(Schedule schedule, int journeyCount) {
+        this(schedule); // 기존 생성자 호출
+        this.journeyCount = journeyCount;
     }
 }

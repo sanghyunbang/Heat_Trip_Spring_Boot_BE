@@ -18,4 +18,5 @@ public interface JourneyRepository_v2 extends JpaRepository<Journey, Long> {
     /** 필요 시 N+1 방지를 위해 스케줄을 즉시 로딩하는 변형(옵션) */
     @EntityGraph(attributePaths = {"schedule"})
     List<Journey> findWithScheduleByUser(User user);
+    int countBySchedule_ScheduleId(Integer scheduleId);
 }

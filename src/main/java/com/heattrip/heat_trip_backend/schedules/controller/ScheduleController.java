@@ -31,9 +31,8 @@ public class ScheduleController {
     // --------------조회(미완성)
     @GetMapping("/schedules")
 public ResponseEntity<?> getMySchedules(HttpServletRequest request) {
-    System.out.println("                리스트 호출");
     String authHeader = request.getHeader("Authorization");
-    System.out.println("                리스트 호출 authHeader : " + authHeader);
+    System.out.println("                스케쥴 조회 리스트 호출 \n                authHeader : " + authHeader);
 
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
         return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
@@ -57,10 +56,13 @@ public ResponseEntity<?> getMySchedules(HttpServletRequest request) {
 
     // 필요시 DTO로 변환
     List<ScheduleResponseDto> dtos = schedules.stream()
-        .map(ScheduleResponseDto::new)
+        .map(schedule -> {
+            int journeyCount = scheduleService.countJourneysBySchedule(schedule.getScheduleId());
+            return new ScheduleResponseDto(schedule, journeyCount);
+        })
         .toList();
 
-        System.out.println("        들어가 있는 값 체크 : \n"+dtos);
+        System.out.println("        들어가 있는 값 체크 : \n"+dtos.get(0));
     return ResponseEntity.ok(dtos);
 }
 
