@@ -13,4 +13,7 @@ public class UpdateProfileRequest {
     private Integer age;        // null 이면 미수정
     private String travelType;  // null 이면 미수정
     private String imageUrl;    // null 이면 미수정 (S3 URL)
+
+    // ✅ 선택: 마케팅 동의 변경
+    private Boolean agreeMarketing;
 }

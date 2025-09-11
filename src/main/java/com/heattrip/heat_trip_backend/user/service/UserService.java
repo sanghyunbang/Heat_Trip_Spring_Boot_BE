@@ -23,25 +23,56 @@ public class UserService {
     private final PasswordEncoder passwordEncoder; // 이건 뭐지?
     private final JWTProvider jwtProvider;
 
+   @Transactional
     public void signup(SignupRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
 
-        User.Gender gender = switch (request.getGender().toLowerCase()) {
-            case "male" -> User.Gender.MALE;
+        // ✅ 필수 동의 체크 (나이와 무관)
+        if (Boolean.FALSE.equals(request.getAgreeTos()) || Boolean.FALSE.equals(request.getAgreePrivacy())
+            || request.getAgreeTos() == null || request.getAgreePrivacy() == null) {
+            throw new IllegalArgumentException("필수 동의(이용약관/개인정보)에 동의해 주세요.");
+        }
+
+        User.Gender gender = switch (safeLower(request.getGender())) {
+            case "male"   -> User.Gender.MALE;
             case "female" -> User.Gender.FEMALE;
-            default -> User.Gender.OTHER;
+            default       -> User.Gender.OTHER;
         };
 
+        User.AgeGroup ageGroup = switch (safeLower(request.getAgeGroup())) {
+            case "under14" -> User.AgeGroup.UNDER14;
+            default        -> User.AgeGroup.OVER14; // 기본
+        };
+
+        LocalDateTime now = LocalDateTime.now();
+        String tosVer = nvl(request.getTosVersion(), "v1.0");
+        String prvVer = nvl(request.getPrivacyVersion(), "v1.0");
+        String mktVer = nvl(request.getMarketingVersion(), "v1.0");
+
         User user = User.builder()
-                    .email(request.getEmail())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .nickname(request.getNickname())
-                    .name(request.getName())
-                    .gender(gender)
-                    .createdAt(LocalDateTime.now())
-                    .build();
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .nickname(request.getNickname())
+                .name(request.getName())
+                .gender(gender)
+                .ageGroup(ageGroup)
+
+                .agreeTos(true)
+                .agreePrivacy(true)
+                .agreeMarketing(Boolean.TRUE.equals(request.getAgreeMarketing()))
+
+                .tosVersion(tosVer)
+                .privacyVersion(prvVer)
+                .marketingVersion(Boolean.TRUE.equals(request.getAgreeMarketing()) ? mktVer : null)
+
+                .tosAgreedAt(now)
+                .privacyAgreedAt(now)
+                .marketingAgreedAt(Boolean.TRUE.equals(request.getAgreeMarketing()) ? now : null)
+
+                .createdAt(now)
+                .build();
 
         userRepository.save(user);
     }
@@ -93,6 +124,16 @@ public class UserService {
             u.setImageUrl(req.getImageUrl());
         }
 
+        // ✅ 선택: 마케팅 동의 토글 처리
+        if (req.getAgreeMarketing() != null) {
+            boolean newVal = req.getAgreeMarketing();
+            if (u.getAgreeMarketing() == null || u.getAgreeMarketing() != newVal) {
+                u.setAgreeMarketing(newVal);
+                u.setMarketingVersion(newVal ? nvl(u.getMarketingVersion(), "v1.0") : null);
+                u.setMarketingAgreedAt(newVal ? LocalDateTime.now() : null);
+            }
+        }
+
         // @PreUpdate가 updatedAt 갱신
         return userRepository.save(u);
     }
@@ -117,4 +158,7 @@ public class UserService {
         // 필요 시: userRepository.flush();
     }
 
+     // helpers
+    private static String safeLower(String s) { return s == null ? null : s.toLowerCase(); }
+    private static String nvl(String s, String d) { return (s == null || s.isBlank()) ? d : s; }
 }

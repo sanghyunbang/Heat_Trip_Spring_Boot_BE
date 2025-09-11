@@ -44,6 +44,23 @@ public class User {
     private LocalDateTime createdAt; // 생성일
     private LocalDateTime updatedAt; // 수정일
 
+    // ✅ 나이 구분 (만 14세 이상/미만)
+    @Enumerated(EnumType.STRING)
+    private AgeGroup ageGroup;    // OVER14 / UNDER14
+
+    // ✅ 동의 플래그
+    private Boolean agreeTos;         // 필수
+    private Boolean agreePrivacy;     // 필수
+    private Boolean agreeMarketing;   // 선택
+
+    // ✅ 동의 버전 및 시각
+    private String tosVersion;
+    private String privacyVersion;
+    private String marketingVersion;
+    private LocalDateTime tosAgreedAt;
+    private LocalDateTime privacyAgreedAt;
+    private LocalDateTime marketingAgreedAt;
+
 //    // 엔티티가 수정되기 전 자동으로 실행
 //    @PrePersist // 엔티티가 처음 저장되기 전에 실행
 //    public void prePersist() {
@@ -67,5 +84,7 @@ public class User {
         OTHER // 기타   
     }
 
-    
+    // [0911 추가]
+    public enum AgeGroup { OVER14, UNDER14 }
+
 }
