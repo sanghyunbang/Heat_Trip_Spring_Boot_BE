@@ -29,9 +29,9 @@ public class TourFetchScheduler {
     // }
 
     /** 매일 02:10 실행 (Asia/Seoul) */
-    @Scheduled(cron = "0 10 2 * * *", zone = "Asia/Seoul")
-    public void runDaily() throws Exception {
-        importer.fullImportAllAreas();          // 1) places 최신화 (외부 API → JSON)
-        snapshotSvc.rebuildAllSnapshots(1000);  // 2) 스냅샷 전량 재빌드
-    }
+    // @Scheduled(cron = "0 10 2 * * *", zone = "Asia/Seoul")
+    // public void runDaily() throws Exception {
+    //     importer.fullImportAllAreas();          // 1) places 최신화 (외부 API → JSON)
+    //     snapshotSvc.rebuildAllSnapshots(1000);  // 2) 스냅샷 전량 재빌드
+    // }
 }
