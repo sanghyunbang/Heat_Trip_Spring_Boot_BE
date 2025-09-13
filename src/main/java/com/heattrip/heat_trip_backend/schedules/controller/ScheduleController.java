@@ -30,41 +30,46 @@ public class ScheduleController {
 
     // --------------조회(미완성)
     @GetMapping("/schedules")
-public ResponseEntity<?> getMySchedules(HttpServletRequest request) {
-    String authHeader = request.getHeader("Authorization");
-    System.out.println("                스케쥴 조회 리스트 호출 \n                authHeader : " + authHeader);
+    public ResponseEntity<?> getMySchedules(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        System.out.println("스케쥴 조회 리스트 호출 / authHeader : " + authHeader);
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("인증 토큰이 없습니다.");
+        }
+
+        String token = authHeader.substring(7);
+        if (!jwtProvider.validateToken(token)) {
+            return ResponseEntity.status(401).body("유효하지 않은 토큰입니다.");
+        }
+
+        String userId = jwtProvider.getUserIdFromToken(token);
+        User user = userService.findByEmail(userId);
+        if (user == null) {
+            return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+        }
+
+        List<Schedule> schedules = scheduleService.findByUser(user);
+
+        List<ScheduleResponseDto> dtos = schedules.stream()
+                .map(schedule -> {
+                    int journeyCount = scheduleService.countJourneysBySchedule(schedule.getScheduleId());
+                    return new ScheduleResponseDto(schedule, journeyCount);
+                })
+                .toList();
+
+        // ✅ 디버그는 사이즈만 안전하게 출력
+        System.out.println("스케쥴 DTO 개수 = " + dtos.size());
+
+        // ✅ 빈 결과 처리 (프론트는 204 지원)
+        if (dtos.isEmpty()) {
+            return ResponseEntity.noContent().build(); // 204
+            // 또는: return ResponseEntity.ok(dtos); // 200 + []
+        }
+
+        return ResponseEntity.ok(dtos);
     }
 
-    String token = authHeader.substring(7);
-
-    if (!jwtProvider.validateToken(token)) {
-        return ResponseEntity.status(401).body("유효하지 않은 토큰입니다.");
-    }
-
-    String userId = jwtProvider.getUserIdFromToken(token);
-    User user = userService.findByEmail(userId);
-
-    if (user == null) {
-        return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
-    }
-
-    // ⭐ 유저 기준으로 스케줄 조회
-    List<Schedule> schedules = scheduleService.findByUser(user);
-
-    // 필요시 DTO로 변환
-    List<ScheduleResponseDto> dtos = schedules.stream()
-        .map(schedule -> {
-            int journeyCount = scheduleService.countJourneysBySchedule(schedule.getScheduleId());
-            return new ScheduleResponseDto(schedule, journeyCount);
-        })
-        .toList();
-
-        System.out.println("        들어가 있는 값 체크 : \n"+dtos.get(0));
-    return ResponseEntity.ok(dtos);
-}
 
     // --------------등록 
     @PostMapping("/schedules")
