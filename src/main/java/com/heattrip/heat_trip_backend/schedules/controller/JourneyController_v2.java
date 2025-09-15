@@ -114,6 +114,8 @@ public class JourneyController_v2 {
             .map(this::composeJourneyWithImages)
             .collect(Collectors.toList());
 
+            System.out.println("entries에서 보내주고 있는 값 = "+body);
+
         return ResponseEntity.ok(body);
     }
 

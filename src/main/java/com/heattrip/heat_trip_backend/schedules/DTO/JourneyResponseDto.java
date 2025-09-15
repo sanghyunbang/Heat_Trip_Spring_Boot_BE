@@ -19,6 +19,8 @@ public class JourneyResponseDto {
     private List<String> photos;
     private String userNickname;
 
+    private Integer scheduleId;
+
     public JourneyResponseDto(Journey journey) {
         this.id = journey.getId();
         this.title = journey.getTitle();
@@ -29,5 +31,8 @@ public class JourneyResponseDto {
         this.body = journey.getBody();
         this.photos = journey.getPhotos();
         this.userNickname = journey.getUser().getNickname();
+
+        // schedule이 존재하면 id를 가져오고, 없으면 null 처리
+        this.scheduleId = journey.getSchedule() != null ? journey.getSchedule().getScheduleId() : null;
     }
 }
