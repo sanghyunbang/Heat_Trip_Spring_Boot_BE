@@ -106,7 +106,7 @@ public class JourneyController_v2 {
     // ─────────────────────────────────────
     @GetMapping("/entries")
     public ResponseEntity<?> listMyJourneys(HttpServletRequest request) {
-        System.out.println("        Get Entries 진입        \n        들어온 값 : " + request);
+        System.out.println("        ㅡㅡㅡㅡㅡGet Entries 진입 ");
         User user = requireUser(request);
         List<Journey> journeys = journeyService.getJourneysByUser(user);
 
@@ -114,7 +114,7 @@ public class JourneyController_v2 {
             .map(this::composeJourneyWithImages)
             .collect(Collectors.toList());
 
-            System.out.println("entries에서 보내주고 있는 값 = "+body);
+            System.out.println("ㅡㅡㅡㅡㅡㅡㅡentries에서 보내주고 있는 값 = "+body.get(0));
 
         return ResponseEntity.ok(body);
     }
@@ -134,7 +134,7 @@ public class JourneyController_v2 {
     // ─────────────────────────────────────
     @PostMapping("/entries")
     public ResponseEntity<?> createJourney(@RequestBody JourneyRequestDto dto, HttpServletRequest request) {
-        System.out.println("           entrys 진입완료 들어온 값 : \n" + dto);
+        System.out.println("           ㅡㅡㅡㅡㅡㅡㅡentrys 진입완료 들어온 값 : \n" + dto);
         User user = requireUser(request);
         Journey saved = journeyService.saveJourney(dto, user);
         return ResponseEntity.ok(new JourneyWithImagesResponse(new JourneyResponseDto(saved), List.of()));
@@ -167,12 +167,13 @@ public class JourneyController_v2 {
     // ─────────────────────────────────────
     // U: 여정 본문 수정 (이미지 변경은 별도 엔드포인트)
     // ─────────────────────────────────────
-    @PutMapping("/entries/{id}")
+    @PutMapping("/entries/{Did}")
     public ResponseEntity<?> updateJourney(
-        @PathVariable Long id,
+        @PathVariable("Did") Long id,
         @RequestBody JourneyRequestDto dto,
         HttpServletRequest request
     ) {
+        System.out.println("    ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡupdate diary 진입함. 진입한 게시물 id : " + id);
         User user = requireUser(request);
         Journey target = requireOwnedJourney(id, user);
         Journey updated = journeyService.updateJourney(target, dto);
@@ -227,8 +228,9 @@ public class JourneyController_v2 {
     // ─────────────────────────────────────
     // D: 여정 삭제 (연결 이미지 전체 삭제 후 본문 삭제)
     // ─────────────────────────────────────
-    @DeleteMapping("/entries/{id}")
-    public ResponseEntity<?> deleteJourney(@PathVariable Long id, HttpServletRequest request) {
+    @DeleteMapping("/entries/{diaryId}")
+    public ResponseEntity<?> deleteJourney(@PathVariable("diaryId") Long id, HttpServletRequest request) {
+        System.out.println("    ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡdelete diary 진입함. 진입한 게시글 id :  " + id );
         User user = requireUser(request);
         Journey j = requireOwnedJourney(id, user);
 
