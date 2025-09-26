@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,12 +31,6 @@ public class MediaController {
         this.mediaService = mediaService;
     }
 
-    /** 프로젝트 공통 JWT 유틸로 대체하세요. 여기선 단순 샘플 */
-    private String ownerId(HttpServletRequest req) {
-        Object v = req.getAttribute("ownerId");
-        if (v == null) throw new IllegalStateException("ownerId가 누락되었습니다.");
-        return v.toString();
-    }
 
     // ─────────────────────────────────────────────────────────────────────
     // C: 멀티 파일 업로드
@@ -46,10 +41,9 @@ public class MediaController {
         @RequestParam(name = "category") UploadCategory category, // ← name 명시
         @RequestParam(name = "refType", required = false) String refType,
         @RequestParam(name = "refId",   required = false) String refId,
-        HttpServletRequest req
+        @AuthenticationPrincipal String userId
     ) {
-        final String owner = ownerId(req);
-        var saved = mediaService.uploadMany(files, category, owner, refType, refId);
+        var saved = mediaService.uploadMany(files, category, userId, refType, refId);
 
         // 응답 JSON 필드명은 기존과 동일하게 "key" 유지(클라이언트 호환)
         var body = saved.stream().map(m -> Map.<String, Object>of(
@@ -95,10 +89,9 @@ public class MediaController {
     public ResponseEntity<Map<String, Object>> replace(
         @PathVariable(name = "mediaId") @Min(1) Long mediaId, // ← name 명시
         @RequestPart("file") MultipartFile file,
-        HttpServletRequest req
+        @AuthenticationPrincipal String userId
     ) {
-        final String owner = ownerId(req);
-        var m = mediaService.replace(mediaId, file, owner);
+        var m = mediaService.replace(mediaId, file, userId);
         return ResponseEntity.ok(Map.of(
             "id", m.getId(),
             "key", m.getObjectKey(),
@@ -112,10 +105,9 @@ public class MediaController {
     @DeleteMapping("/{mediaId}")
     public ResponseEntity<Void> delete(
         @PathVariable(name = "mediaId") @Min(1) Long mediaId, // ← name 명시
-        HttpServletRequest req
+        @AuthenticationPrincipal String userId
     ) {
-        final String owner = ownerId(req);
-        mediaService.delete(mediaId, owner);
+        mediaService.delete(mediaId, userId);
         return ResponseEntity.noContent().build();
     }
 
@@ -126,10 +118,9 @@ public class MediaController {
     public ResponseEntity<Void> deleteByRef(
         @RequestParam(name = "refType") String refType, // ← name 명시
         @RequestParam(name = "refId")   String refId,   // ← name 명시
-        HttpServletRequest req
+        @AuthenticationPrincipal String userId
     ) {
-        final String owner = ownerId(req);
-        mediaService.deleteByRef(refType, refId, owner);
+        mediaService.deleteByRef(refType, refId, userId);
         return ResponseEntity.noContent().build();
     }
 }
