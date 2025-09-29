@@ -1,10 +1,12 @@
 package com.heattrip.heat_trip_backend.S3;
 
 import java.util.Set;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * 업로드 범주 정책(경로 prefix, 허용타입, 최대크기).
  */
+@Schema(description = "Upload category; controls S3 prefix, allowed MIME types and size limits")
 public enum UploadCategory {
     JOURNEY_IMAGE("journeys", Set.of("image/jpeg","image/png","image/webp","image/gif"), 10 * 1024 * 1024L),
     PROFILE_IMAGE("profiles", Set.of("image/jpeg","image/png","image/webp"),              5  * 1024 * 1024L),

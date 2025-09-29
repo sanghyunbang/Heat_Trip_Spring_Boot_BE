@@ -63,7 +63,12 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션을 생성하지 않음 (JWT 인증 방식이므로)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/oauth2/**", "/login/**", "/public/**", "/auth/**", "/error","/api/explore/**","/api/curation/**").permitAll() // 인증 없이 접근 허용
+                .requestMatchers("/", "/oauth2/**", "/login/**", "/public/**", "/auth/**", 
+                    "/error","/api/explore/**","/api/curation/**",
+                    
+                    // ▼ Swagger/OpenAPI 문서 경로 허용
+                    "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**"
+                ).permitAll() // 인증 없이 접근 허용
                 .anyRequest().authenticated()// 나머지 요청은 인증 필요
             )
             .oauth2Login(oauth2 -> oauth2
