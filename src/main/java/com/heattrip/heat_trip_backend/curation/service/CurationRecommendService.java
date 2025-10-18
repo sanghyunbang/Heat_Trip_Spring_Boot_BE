@@ -1,8 +1,9 @@
-// src/main/java/com/heattrip/heat_trip_backend/curation/service/CurationRecommendService.java
+// com.heattrip.heat_trip_backend.curation.service.CurationRecommendService
 package com.heattrip.heat_trip_backend.curation.service;
 
-import com.heattrip.heat_trip_backend.curation.dto.RankRequest;
 import com.heattrip.heat_trip_backend.curation.dto.PlaceScoreDTO;
+import com.heattrip.heat_trip_backend.curation.dto.RankRequest;
+import com.heattrip.heat_trip_backend.curation.dto.RecommendResultDTO;
 import com.heattrip.heat_trip_backend.llm.RecommenderClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,17 +21,20 @@ public class CurationRecommendService {
     private final Cat3DictionaryService cat3Dict;
     private final ScoringService scoring;
 
-    public List<PlaceScoreDTO> recommend(RankRequest in) {
-        log.info("[/recommend] topN={}, goals={}, cat3Filter={}",
-                in.getTopN(), in.getGoals(), in.getCat3Filter());
+    public RecommendResultDTO recommend(RankRequest in) {
 
-        // 0) 프런트가 cat3Filter를 준 경우: LLM 생략
-        if (in.getCat3Filter() != null && !in.getCat3Filter().isEmpty()) {
+        // 1) cat3Filter가 있으면 LLM 생략 (llm 메타는 null)
+        if (in.getCat3Filter()!=null && !in.getCat3Filter().isEmpty()) {
             log.info("Skip LLM: client provided cat3Filter(size={})", in.getCat3Filter().size());
-            return scoring.rank(in);
+            List<PlaceScoreDTO> ranked = scoring.rank(in);
+            return RecommendResultDTO.builder()
+                    .places(ranked)
+                    .llm(null)
+                    .cat3FromLlm(null)
+                    .build();
         }
 
-        // 1) LLM 요청 빌드 (camelCase → @JsonProperty로 snake_case 직렬화됨)
+        // 2) LLM 호출
         var llmReq = RecommenderClient.RecommendRequest.builder()
                 .pleasure(in.getPad().getPleasure())
                 .arousal(in.getPad().getArousal())
@@ -42,26 +46,44 @@ public class CurationRecommendService {
                 .emotionNote(in.getEmotionNote())
                 .build();
 
-        var res = recommender.recommend(llmReq);
-        log.info("LLM theme='{}', groups={}",
-                res.getThemeName(),
-                res.getCategoryGroups() == null ? 0 : res.getCategoryGroups().size());
+        var res = recommender.recommend(llmReq); // LLM 응답
 
-        // 2) 라벨 → CAT3
+        // 3) 라벨 → CAT3
         var labels = res.getCategoryGroups().stream()
                 .flatMap(g -> g.getCategories().stream())
                 .toList();
-        log.info("LLM labels={}", labels);
-
         Set<String> cat3 = cat3Dict.resolveCat3Codes(labels);
-        log.info("Resolved CAT3 codes(size={}): {}", cat3.size(), cat3);
-
-        if (cat3.isEmpty()) {
-            log.warn("No CAT3 resolved from labels. Ranking will likely be empty.");
-        }
-
-        // 3) cat3Filter 주입 후 스코어링
         in.setCat3Filter(cat3.stream().toList());
-        return scoring.rank(in);
+
+        // 4) 랭킹 계산
+        List<PlaceScoreDTO> ranked = scoring.rank(in);
+
+        // 5) LLM 메타 구성 + 반환
+        var llmMeta = RecommendResultDTO.LlmMeta.builder()
+                .schemaVersion(res.getSchemaVersion())
+                .emotionDiagnosis(res.getEmotionDiagnosis())
+                .themeName(res.getThemeName())
+                .themeDescription(res.getThemeDescription())
+                .categoryGroups(res.getCategoryGroups().stream()
+                        .map(g -> RecommendResultDTO.LlmMeta.CategoryGroup.builder()
+                                .groupName(g.getGroupName())
+                                .categories(g.getCategories())
+                                .build())
+                        .toList())
+                .activities(res.getActivities().stream()
+                        .map(a -> RecommendResultDTO.LlmMeta.Activity.builder()
+                                .title(a.getTitle())
+                                .description(a.getDescription())
+                                .build())
+                        .toList())
+                .keywords(res.getKeywords())
+                .comfortLetter(res.getComfortLetter())
+                .build();
+
+        return RecommendResultDTO.builder()
+                .places(ranked)
+                .llm(llmMeta)
+                .cat3FromLlm(in.getCat3Filter())
+                .build();
     }
 }
