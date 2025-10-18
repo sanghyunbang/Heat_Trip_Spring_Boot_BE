@@ -1,50 +1,54 @@
+// src/main/java/com/heattrip/heat_trip_backend/llm/RecommenderClient.java
 package com.heattrip.heat_trip_backend.llm;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Value;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.BodyExtractors;
+import org.springframework.web.reactive.function.client.*;
+import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.List;
 
-/**
- * FastAPI(LLM) /recommend 호출
- */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class RecommenderClient {
 
-    private final WebClient webClient;
+    private final @Qualifier("llmWebClient") WebClient llmWebClient;
 
-    public RecommenderClient(
-            @Value("${llm.recommender.base-url}") String baseUrl,
-            @Value("${llm.recommender.connect-timeout-ms:2000}") long connectTimeoutMs,
-            @Value("${llm.recommender.read-timeout-ms:5000}") long readTimeoutMs
-    ) {
-        this.webClient = WebClient.builder()
-                .baseUrl(baseUrl)
-                .build();
-    }
-
+    /** FastAPI /recommend 호출 */
     public RecommendResponse recommend(RecommendRequest req) {
-        return webClient.post()
+        log.info("[LLM] POST /recommend");
+        return llmWebClient.post()
                 .uri("/recommend")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .retrieve()
+                .onStatus(
+                        status -> status.is4xxClientError() || status.is5xxServerError(),
+                        resp -> resp.body(BodyExtractors.toMono(String.class))
+                                .defaultIfEmpty("")
+                                .flatMap(body -> {
+                                    log.error("[LLM] HTTP {} body={}", resp.statusCode(), body);
+                                    return Mono.error(new RuntimeException("LLM HTTP " + resp.statusCode().value()));
+                                })
+                )
                 .bodyToMono(RecommendResponse.class)
-                .timeout(Duration.ofMillis(7000))
-                .retryWhen(Retry.backoff(1, Duration.ofMillis(200)))
+                .timeout(Duration.ofSeconds(35)) // 파이프라인 전체 타임아웃
+                .retryWhen(Retry.backoff(2, Duration.ofMillis(300))
+                        .filter(ex -> !(ex instanceof WebClientResponseException))) // 4xx는 재시도 안함
+                .doOnError(e -> log.error("[LLM] call failed: {}", e.toString()))
                 .block();
     }
 
+    // ====== DTOs ======
     @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
     public static class RecommendRequest {
         private double pleasure;
@@ -52,27 +56,47 @@ public class RecommenderClient {
         private double dominance;
         private double energy;
         private double social;
-        private String primary_mood;
-        private List<String> purpose_keywords;
-        private String emotion_note;
+
+        @JsonProperty("primary_mood")
+        private String primaryMood;
+
+        @JsonProperty("purpose_keywords")
+        private List<String> purposeKeywords;
+
+        @JsonProperty("emotion_note")
+        private String emotionNote;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class RecommendResponse {
-        private int schema_version;
-        private String emotion_diagnosis;
-        private String theme_name;
-        private String theme_description;
-        private List<CategoryGroup> category_groups;
+        @JsonProperty("schema_version")
+        private int schemaVersion;
+
+        @JsonProperty("emotion_diagnosis")
+        private String emotionDiagnosis;
+
+        @JsonProperty("theme_name")
+        private String themeName;
+
+        @JsonProperty("theme_description")
+        private String themeDescription;
+
+        @JsonProperty("category_groups")
+        private List<CategoryGroup> categoryGroups;
+
         private List<Activity> activities;
         private List<String> keywords;
-        private String comfort_letter;
+
+        @JsonProperty("comfort_letter")
+        private String comfortLetter;
 
         @Getter @Setter @NoArgsConstructor @AllArgsConstructor
         public static class CategoryGroup {
-            private String group_name;
+            @JsonProperty("group_name")
+            private String groupName;
             private List<String> categories;
         }
+
         @Getter @Setter @NoArgsConstructor @AllArgsConstructor
         public static class Activity {
             private String title;

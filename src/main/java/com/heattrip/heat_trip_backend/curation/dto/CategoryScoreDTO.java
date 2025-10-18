@@ -9,11 +9,7 @@ import lombok.Setter;
 import java.util.List;
 
 /** 카테고리별 집계 결과(대표 장소 포함) */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CategoryScoreDTO {
     private Integer categoryId;
     private String categoryName;

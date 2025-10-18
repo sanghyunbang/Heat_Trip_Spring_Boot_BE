@@ -1,9 +1,6 @@
 package com.heattrip.heat_trip_backend.curation.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /** 사용자 PAD 입력(-2,-1,1,2) */
 @Getter
