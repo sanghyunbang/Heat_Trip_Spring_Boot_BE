@@ -3,6 +3,10 @@ package com.heattrip.heat_trip_backend.tour.service;
 
 import com.heattrip.heat_trip_backend.tour.domain.*;
 import com.heattrip.heat_trip_backend.tour.repository.*;
+
+import com.heattrip.heat_trip_backend.curation.entity.PlaceTrait; // ★ curation 엔티티 사용
+import com.heattrip.heat_trip_backend.curation.repository.PlaceTraitRepository; // ★ curation 리포 사용
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +25,10 @@ import java.util.stream.Collectors;
 public class TraitSnapshotService {
 
   private final PlaceRepository placeRepo;
-  private final PlaceTraitRepo traitRepo;
+
+  // ▼ 기존 PlaceTraitRepo 대신 curation의 Repository를 주입
+  private final PlaceTraitRepository traitRepo;
+
   private final PlaceHashtagRepo hashtagRepo;
   private final PlaceSimpleTagRepo simpleTagRepo;
   private final PlaceDescriptionRepo descRepo;
@@ -61,7 +68,7 @@ public class TraitSnapshotService {
       return 0;
     }
 
-    // 3) cat3 → 소스 데이터 맵 구성
+    // 3) cat3 → 소스 데이터 맵 구성 (curation 엔티티 PlaceTrait 활용)
     Map<String, PlaceTrait> traitMap = traitRepo.findAllById(cat3s).stream()
         .collect(Collectors.toMap(PlaceTrait::getPlaceId, Function.identity()));
 
@@ -89,7 +96,6 @@ public class TraitSnapshotService {
       PlaceTrait t = traitMap.get(cat3);
       String cat3Name = (t == null ? null : t.getName());
 
-      // ★ cat3name 없으면 제외
       if (cat3Name == null || cat3Name.isBlank()) {
         skippedNoName++;
         continue;
@@ -101,7 +107,7 @@ public class TraitSnapshotService {
           .cat3(cat3)
           .cat3Name(cat3Name)
           .pScore(n(t.getPScore()))
-          .aScore(n(t.getAScore()))
+          .aScore(n(t.getAScore()))   // Lombok이 getAScore() 생성
           .dScore(n(t.getDScore()))
           .sociality(n(t.getSociality()))
           .noise(n(t.getNoise()))

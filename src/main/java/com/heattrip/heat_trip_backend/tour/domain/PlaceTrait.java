@@ -10,7 +10,7 @@ import lombok.*;
  * - CSV를 앱 시작 시 1회 로드(비어있을 때만).
  * - 운영 중 거의 변하지 않는 데이터로 가정.
  */
-@Entity @Table(name = "place_traits")
+// @Entity @Table(name = "place_traits")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class PlaceTrait {
 

@@ -4,6 +4,11 @@ import com.heattrip.heat_trip_backend.curation.entity.Place;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-/** places 테이블(curation 도메인) */
-@Repository("curationPlaceRepository") // ← 빈 이름도 명시적으로 다르게
-public interface CurationPlaceRepository extends JpaRepository<Place, Long> { }
+import java.util.Collection;
+import java.util.List;
+
+@Repository("curationPlaceRepository")
+public interface CurationPlaceRepository extends JpaRepository<Place, Long> {
+
+    List<Place> findByCat3In(Collection<String> cat3Codes);
+}

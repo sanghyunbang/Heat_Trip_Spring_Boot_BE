@@ -1,35 +1,43 @@
 package com.heattrip.heat_trip_backend.curation.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * places 테이블 매핑
  * - PK: contentid (BIGINT)
- * - 이 엔티티는 추천에 필요한 최소 컬럼만 매핑(필요시 컬럼 추가 매핑)
  */
-
-@Entity(name = "CurationPlace")     // 엔티티 "이름"을 바꿈 (테이블명과 별개)
-@Table(name = "places")             // 실제 테이블명은 동일
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity(name = "CurationPlace")
+@Table(name = "places")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Place {
 
-    /** 장소 고유 ID (관광API contentid). 다른 테이블의 link_id와 1:1 매칭 */
     @Id
     @Column(name = "contentid", nullable = false)
     private Long id;
 
-    /** 장소명 */
     @Column(name = "title")
     private String title;
 
-    /** 세부 카테고리 코드(CAT3). 카테고리 추천 집계에 사용 */
+    /** 세부 카테고리 코드(CAT3) */
     @Column(name = "cat3")
     private String cat3;
 
-    /** 위경도(필요시 사용) */
+    /** 위경도(가정: mapy=lat, mapx=lon) */
     @Column(name = "mapx")
     private Double mapx;
+
     @Column(name = "mapy")
     private Double mapy;
 }

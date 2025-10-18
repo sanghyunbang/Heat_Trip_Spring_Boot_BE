@@ -1,29 +1,33 @@
+// src/main/java/com/heattrip/heat_trip_backend/tour/bootstrap/TraitBootstrap.java
 package com.heattrip.heat_trip_backend.tour.bootstrap;
 
-import com.heattrip.heat_trip_backend.tour.domain.*;
-import com.heattrip.heat_trip_backend.tour.repository.*;
+import com.heattrip.heat_trip_backend.curation.entity.PlaceTrait; // ★ curation 엔티티 사용
+import com.heattrip.heat_trip_backend.curation.repository.PlaceTraitRepository; // ★ curation 리포지토리 사용
+import com.heattrip.heat_trip_backend.tour.domain.PlaceHashtag;
+import com.heattrip.heat_trip_backend.tour.domain.PlaceSimpleTag;
+import com.heattrip.heat_trip_backend.tour.domain.PlaceDescription;
+import com.heattrip.heat_trip_backend.tour.repository.PlaceHashtagRepo;
+import com.heattrip.heat_trip_backend.tour.repository.PlaceSimpleTagRepo;
+import com.heattrip.heat_trip_backend.tour.repository.PlaceDescriptionRepo;
+
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.math.BigDecimal; // ★ BigDecimal 임포트
 
-/**
- * 앱 시작 시 place_traits/hashtags/simple_tags/descriptions가 "비어있다면" classpath CSV에서 1회 로드
- */
 @Component
 @RequiredArgsConstructor
 public class TraitBootstrap {
 
-    private final PlaceTraitRepo traitRepo;
+    private final PlaceTraitRepository traitRepo; // ★ 변경: curation 리포
     private final PlaceHashtagRepo hashtagRepo;
     private final PlaceSimpleTagRepo simpleTagRepo;
     private final PlaceDescriptionRepo descRepo;
@@ -31,46 +35,43 @@ public class TraitBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void loadOnceIfEmpty() throws Exception {
-        if (traitRepo.count() > 0) return; // 이미 있으면 스킵
+        if (traitRepo.count() > 0) return;
 
         var res = new ClassPathResource("data/place_traits.csv");
         try (var is = res.getInputStream();
              var br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
 
-            CSVReader reader = new CSVReaderBuilder(br).withSkipLines(1).build(); // 헤더 스킵
+            CSVReader reader = new CSVReaderBuilder(br).withSkipLines(1).build();
             String[] r;
             while ((r = reader.readNext()) != null) {
-                // 0:CAT3, 1:이름, 2:P, 3:A, 4:D, 5:sociality, 6:noise, 7:crowdness,
-                // 8:del_state, 9:location_type,
-                // 10:hash1, 11:hash2, 12:hash3, 13:simple_tag1, 14:simple_tag2, 15:simple_tag3,
-                // 16:short_descript1, 17:short_descript2
                 String cat3 = safe(r,0);
 
-                // place_traits 본체 (★ BigDecimal 파싱에 bd(...) 사용)
                 PlaceTrait t = PlaceTrait.builder()
                         .placeId(cat3)
                         .name(safe(r,1))
-                        .pScore(bd(r,2))
-                        .aScore(bd(r,3))
-                        .dScore(bd(r,4))
-                        .sociality(bd(r,5))
-                        .noise(bd(r,6))
-                        .crowdness(bd(r,7))
+                        .pScore(dbl(r,2))
+                        .aScore(dbl(r,3))
+                        .dScore(dbl(r,4))
+                        .sociality(dbl(r,5))
+                        .noise(dbl(r,6))
+                        .crowdness(dbl(r,7))
+                        .delState(intOrNull(r,8))
+                        .locationType(safe(r,9))
+                        .hash1(safe(r,10)).hash2(safe(r,11)).hash3(safe(r,12))
+                        .simpleTag1(safe(r,13)).simpleTag2(safe(r,14)).simpleTag3(safe(r,15))
+                        .shortDescript1(safe(r,16)).shortDescript2(safe(r,17))
                         .build();
                 traitRepo.save(t);
 
-                // 해시태그 3개
                 saveHashtag(cat3, safe(r,10));
                 saveHashtag(cat3, safe(r,11));
                 saveHashtag(cat3, safe(r,12));
 
-                // 심플 태그 3개
                 saveSimple(cat3, safe(r,13));
                 saveSimple(cat3, safe(r,14));
                 saveSimple(cat3, safe(r,15));
 
-                // 설명 2개 (CAT3 당 1행)
-                PlaceDescription d = PlaceDescription.builder()
+                var d = PlaceDescription.builder()
                         .placeId(cat3)
                         .shortDesc1(safe(r,16))
                         .shortDesc2(safe(r,17))
@@ -91,14 +92,20 @@ public class TraitBootstrap {
         }
     }
 
-    // ★ 여기! 이 헬퍼들이 바로 이 파일(부트스트랩 클래스) "아래쪽"에 위치합니다.
     private static String safe(String[] arr, int idx){
         return (idx < arr.length && arr[idx] != null && !arr[idx].isBlank()) ? arr[idx] : null;
     }
-    private static BigDecimal bd(String[] arr, int idx){
+    private static Double dbl(String[] arr, int idx){
         try {
             return (idx < arr.length && arr[idx] != null && !arr[idx].isBlank())
-                    ? new BigDecimal(arr[idx])
+                    ? Double.valueOf(arr[idx])
+                    : null;
+        } catch (Exception ignore) { return null; }
+    }
+    private static Integer intOrNull(String[] arr, int idx){
+        try {
+            return (idx < arr.length && arr[idx] != null && !arr[idx].isBlank())
+                    ? Integer.valueOf(arr[idx])
                     : null;
         } catch (Exception ignore) { return null; }
     }
