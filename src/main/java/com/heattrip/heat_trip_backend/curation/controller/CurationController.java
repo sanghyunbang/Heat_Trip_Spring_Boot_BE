@@ -29,6 +29,9 @@ public class CurationController {
 
     @PostMapping("/rank")
     public List<PlaceScoreDTO> rank(@RequestBody RankRequest req) {
+        req.setTopK(50);
+        req.setMaxDistanceKm(120.0);
+        req.setDistanceWeight(0.2);
         return scoring.rank(req);
     }
 

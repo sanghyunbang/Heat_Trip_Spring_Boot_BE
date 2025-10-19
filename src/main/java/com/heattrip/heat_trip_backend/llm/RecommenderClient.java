@@ -57,14 +57,16 @@ public class RecommenderClient {
         private double energy;
         private double social;
 
-        @JsonProperty("primary_mood")
-        private String primaryMood;
+        // ★ 파이썬/스프링/플러터 통일: moodKey / notes
+        @JsonProperty("moodKey")
+        private String moodKey;
 
+        // 목적 키워드는 파이썬이 snake_case로 받음 (유지)
         @JsonProperty("purpose_keywords")
         private List<String> purposeKeywords;
 
-        @JsonProperty("emotion_note")
-        private String emotionNote;
+        @JsonProperty("notes")
+        private String notes;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor

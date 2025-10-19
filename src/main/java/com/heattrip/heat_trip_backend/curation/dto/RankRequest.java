@@ -31,6 +31,7 @@ public class RankRequest {
     private int energy;
     private double socialNeed;
     private List<String> goals;
+    private List<String> purposeKeywords;
     private Integer topK;
 
     // (옵션) LLM 전달용

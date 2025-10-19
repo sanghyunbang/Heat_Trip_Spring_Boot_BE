@@ -1,4 +1,4 @@
-// com.heattrip.heat_trip_backend.curation.service.CurationRecommendService
+// src/main/java/com/heattrip/heat_trip_backend/curation/service/CurationRecommendService.java
 package com.heattrip.heat_trip_backend.curation.service;
 
 import com.heattrip.heat_trip_backend.curation.dto.PlaceScoreDTO;
@@ -23,8 +23,8 @@ public class CurationRecommendService {
 
     public RecommendResultDTO recommend(RankRequest in) {
 
-        // 1) cat3Filter가 있으면 LLM 생략 (llm 메타는 null)
-        if (in.getCat3Filter()!=null && !in.getCat3Filter().isEmpty()) {
+        // 1) cat3Filter가 있으면 LLM 생략
+        if (in.getCat3Filter() != null && !in.getCat3Filter().isEmpty()) {
             log.info("Skip LLM: client provided cat3Filter(size={})", in.getCat3Filter().size());
             List<PlaceScoreDTO> ranked = scoring.rank(in);
             return RecommendResultDTO.builder()
@@ -34,21 +34,22 @@ public class CurationRecommendService {
                     .build();
         }
 
-        // 2) LLM 호출
+        // 2) LLM 호출 요청 빌드 (★ 필드명 통일: moodKey / notes / purpose_keywords)
         var llmReq = RecommenderClient.RecommendRequest.builder()
                 .pleasure(in.getPad().getPleasure())
                 .arousal(in.getPad().getArousal())
                 .dominance(in.getPad().getDominance())
                 .energy(in.getEnergy())
                 .social(in.getSocialNeed())
-                .primaryMood(in.getMoodKey())
-                .purposeKeywords(in.getGoals())
-                .emotionNote(in.getNotes())
+                .moodKey(in.getMoodKey())                // ← primaryMood 아님
+                .purposeKeywords(in.getPurposeKeywords())          // ← 파이썬은 purpose_keywords 유지
+                .notes(in.getNotes())                    // ← emotionNote 아님
                 .build();
 
-        var res = recommender.recommend(llmReq); // LLM 응답
+        // FastAPI 호출
+        var res = recommender.recommend(llmReq);
 
-        // 3) 라벨 → CAT3
+        // 3) 라벨 → CAT3 매핑
         var labels = res.getCategoryGroups().stream()
                 .flatMap(g -> g.getCategories().stream())
                 .toList();
@@ -58,7 +59,7 @@ public class CurationRecommendService {
         // 4) 랭킹 계산
         List<PlaceScoreDTO> ranked = scoring.rank(in);
 
-        // 5) LLM 메타 구성 + 반환
+        // 5) LLM 메타 구성
         var llmMeta = RecommendResultDTO.LlmMeta.builder()
                 .schemaVersion(res.getSchemaVersion())
                 .emotionDiagnosis(res.getEmotionDiagnosis())
@@ -80,6 +81,7 @@ public class CurationRecommendService {
                 .comfortLetter(res.getComfortLetter())
                 .build();
 
+        // 6) 최종 반환
         return RecommendResultDTO.builder()
                 .places(ranked)
                 .llm(llmMeta)
