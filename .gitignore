@@ -36,7 +36,7 @@ out/
 # 실제 민감한 설정 파일 무시
 /src/main/resources/application-private.properties
 application-private.properties
-config/
+#config/
 
 ### VS Code ###
 .vscode/
