@@ -41,9 +41,9 @@ public class CurationRecommendService {
                 .dominance(in.getPad().getDominance())
                 .energy(in.getEnergy())
                 .social(in.getSocialNeed())
-                .primaryMood(in.getPrimaryMood())
+                .primaryMood(in.getMoodKey())
                 .purposeKeywords(in.getGoals())
-                .emotionNote(in.getEmotionNote())
+                .emotionNote(in.getNotes())
                 .build();
 
         var res = recommender.recommend(llmReq); // LLM 응답

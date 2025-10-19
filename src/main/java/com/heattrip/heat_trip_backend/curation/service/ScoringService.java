@@ -72,8 +72,8 @@ public class ScoringService {
         }
 
         // 4) 스코어 계산 (+ 거리 가중치)
-        final Double originLat = req.getOriginLat();
-        final Double originLon = req.getOriginLon();
+        final Double originLat = req.getUserLat();
+        final Double originLon = req.getUserLng();
         final Double maxDistKm = req.getMaxDistanceKm();
         final double dw = req.getDistanceWeight() == null ? 0.2 : clamp01(req.getDistanceWeight());
 
@@ -145,7 +145,7 @@ public class ScoringService {
         }
 
         // 5) 정렬/상위 N
-        int topN = req.getTopN() != null ? req.getTopN() : 50;
+        int topN = req.getTopK() != null ? req.getTopK() : 50;
         return out.stream()
                 .sorted(Comparator.comparingDouble(PlaceScoreDTO::getFinalScore).reversed())
                 .limit(topN)
@@ -199,7 +199,7 @@ public class ScoringService {
                     .build());
         }
 
-        int topN = (req.getTopN() != null && req.getTopN() > 0) ? req.getTopN() : 6;
+        int topN = (req.getTopK() != null && req.getTopK() > 0) ? req.getTopK() : 6;
         return out.stream()
                 .sorted(Comparator.comparingDouble(CategoryScoreDTO::getScore).reversed())
                 .limit(topN)

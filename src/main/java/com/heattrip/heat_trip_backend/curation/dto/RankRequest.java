@@ -17,7 +17,7 @@ import java.util.List;
  *
  * 🔥 추가 필드(필요 시만 전달)
  * - cat3Filter     : 특정 cat3 코드 제한 (LLM → cat3 바인딩 결과를 여기에)
- * - originLat/Lon  : 사용자 현재 위치 좌표 (mapy=lat, mapx=lon 가정)
+ * - userLat/Lon  : 사용자 현재 위치 좌표 (mapy=lat, mapx=lon 가정)
  * - maxDistanceKm  : 반경 컷(km). null이면 제한 없음
  * - distanceWeight : 0.0~1.0 (0=거리무시, 1=거리강조). null이면 0.2
  */
@@ -31,15 +31,17 @@ public class RankRequest {
     private int energy;
     private double socialNeed;
     private List<String> goals;
-    private Integer topN;
+    private Integer topK;
+
+    // (옵션) LLM 전달용
+    private String notes;
+    private String moodKey;
+    private String moodEmoji;
 
     private List<String> cat3Filter;
-    private Double originLat;
-    private Double originLon;
+    private Double userLat;
+    private Double userLng;
     private Double maxDistanceKm;
     private Double distanceWeight;
 
-    // (옵션) LLM 전달용
-    private String primaryMood;
-    private String emotionNote;
 }
