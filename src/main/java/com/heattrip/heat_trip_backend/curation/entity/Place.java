@@ -40,4 +40,7 @@ public class Place {
 
     @Column(name = "mapy")
     private Double mapy;
+
+    @Column(name = "firstimage")
+    private String firstImage;
 }

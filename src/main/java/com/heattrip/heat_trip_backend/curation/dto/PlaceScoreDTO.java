@@ -23,4 +23,10 @@ public class PlaceScoreDTO {
     // (선택) 거리 응답도 원하면 노출
     private Double distanceKm;
     private Double distanceScore;
+
+    // (추가)
+    // 사진관련
+    private String firstImageUrl;
+    // 카테고리 이름
+    private String cat3Name;
 }

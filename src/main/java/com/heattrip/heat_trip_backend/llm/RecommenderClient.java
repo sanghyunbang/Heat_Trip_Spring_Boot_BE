@@ -41,7 +41,7 @@ public class RecommenderClient {
                                 })
                 )
                 .bodyToMono(RecommendResponse.class)
-                .timeout(Duration.ofSeconds(35)) // 파이프라인 전체 타임아웃
+                .timeout(Duration.ofSeconds(75)) // 파이프라인 전체 타임아웃
                 .retryWhen(Retry.backoff(2, Duration.ofMillis(300))
                         .filter(ex -> !(ex instanceof WebClientResponseException))) // 4xx는 재시도 안함
                 .doOnError(e -> log.error("[LLM] call failed: {}", e.toString()))

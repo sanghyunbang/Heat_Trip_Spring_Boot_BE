@@ -1,4 +1,4 @@
-// com.heattrip.heat_trip_backend.curation.dto.RecommendResultDTO
+// src/main/java/com/heattrip/heat_trip_backend/curation/dto/RecommendResultDTO.java
 package com.heattrip.heat_trip_backend.curation.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,15 +9,16 @@ import java.util.List;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class RecommendResultDTO {
 
-    /** 최종 랭킹 (지금까지 반환하던 그 리스트) */
+    /** 최종 랭킹 (장소 리스트) */
     private List<PlaceScoreDTO> places;
 
     /** LLM 메타(그대로 프론트에 전달) — 없으면 null */
     private LlmMeta llm;
 
-    /** LLM 라벨 → 해석된 CAT3 코드들(디버깅/표시용) */
+    /** (유지) LLM 라벨을 해석해 얻은 CAT3 코드들의 평면 리스트 */
     private List<String> cat3FromLlm;
 
+    // ===== LLM 메타 =====
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class LlmMeta {
         @JsonProperty("schema_version") private Integer schemaVersion;

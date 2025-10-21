@@ -34,22 +34,22 @@ public class CurationRecommendService {
                     .build();
         }
 
-        // 2) LLM 호출 요청 빌드 (★ 필드명 통일: moodKey / notes / purpose_keywords)
+        // 2) LLM 호출 요청 빌드
         var llmReq = RecommenderClient.RecommendRequest.builder()
                 .pleasure(in.getPad().getPleasure())
                 .arousal(in.getPad().getArousal())
                 .dominance(in.getPad().getDominance())
                 .energy(in.getEnergy())
                 .social(in.getSocialNeed())
-                .moodKey(in.getMoodKey())                // ← primaryMood 아님
-                .purposeKeywords(in.getPurposeKeywords())          // ← 파이썬은 purpose_keywords 유지
-                .notes(in.getNotes())                    // ← emotionNote 아님
+                .moodKey(in.getMoodKey())
+                .purposeKeywords(in.getPurposeKeywords())
+                .notes(in.getNotes())
                 .build();
 
         // FastAPI 호출
         var res = recommender.recommend(llmReq);
 
-        // 3) 라벨 → CAT3 매핑
+        // 3) LLM 라벨 → CAT3 코드 집합(랭킹 필터용)
         var labels = res.getCategoryGroups().stream()
                 .flatMap(g -> g.getCategories().stream())
                 .toList();
@@ -59,7 +59,7 @@ public class CurationRecommendService {
         // 4) 랭킹 계산
         List<PlaceScoreDTO> ranked = scoring.rank(in);
 
-        // 5) LLM 메타 구성
+        // 5) LLM 메타 구성 (그대로 프론트에 전달)
         var llmMeta = RecommendResultDTO.LlmMeta.builder()
                 .schemaVersion(res.getSchemaVersion())
                 .emotionDiagnosis(res.getEmotionDiagnosis())
@@ -81,7 +81,7 @@ public class CurationRecommendService {
                 .comfortLetter(res.getComfortLetter())
                 .build();
 
-        // 6) 최종 반환
+        // 6) 최종 반환 — cat3FromLlm만 유지
         return RecommendResultDTO.builder()
                 .places(ranked)
                 .llm(llmMeta)

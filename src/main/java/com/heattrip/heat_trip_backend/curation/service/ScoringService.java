@@ -1,3 +1,4 @@
+// src/main/java/com/heattrip/heat_trip_backend/curation/service/ScoringService.java
 package com.heattrip.heat_trip_backend.curation.service;
 
 import com.heattrip.heat_trip_backend.curation.dto.CategoryScoreDTO;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  * - popularity = α*quality(베이지안 평균) + β*volume(로그; n_reviews/n_blogs 사용)
  * - final = 0.6*trait_match + 0.4*popularity
  * - (옵션) CAT3 필터, 거리 가중치 반영
+ * - (표시) firstImageUrl, cat3Name 포함
  */
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,9 @@ public class ScoringService {
 
     private final EmotionCategoryRepository categoryRepo;
     private final Cat3CategoryMappingRepository mappingRepo;
+
+    /** 코드→대표명 조회용 (로딩 시 고정) */
+    private final Cat3DictionaryService cat3Dict;
 
     // ---- 하이퍼파라미터 ----
     private static final double LAMBDA_G = 0.7, LAMBDA_S = 0.3; // goal vs state
@@ -132,15 +137,23 @@ public class ScoringService {
                 finalScore = (1 - dw) * baseFinal + dw * distanceScore;
             }
 
+            // (e) 표시용 필드 주입
+            String cat3Code      = pl.getCat3();
+            String cat3Name      = cat3Dict.getNameForCat3(cat3Code);   // 코드→대표명
+            if (cat3Name == null) cat3Name = cat3Code;                  // 안전 폴백
+            String firstImageUrl = pl.getFirstImage();                   // 대표 이미지 URL
+
             out.add(PlaceScoreDTO.builder()
                     .placeId(id)
                     .name(pl.getTitle())
-                    .cat3Code(pl.getCat3())
+                    .cat3Code(cat3Code)
                     .traitMatch(trait)
                     .popularity(popularity)
                     .finalScore(finalScore)
                     .distanceKm(distanceKm)
                     .distanceScore(distanceScore)
+                    .firstImageUrl(firstImageUrl)
+                    .cat3Name(cat3Name)
                     .build());
         }
 
@@ -152,7 +165,7 @@ public class ScoringService {
                 .toList();
     }
 
-    /** 카테고리 상위 N 집계 (기존 그대로) */
+    /** 카테고리 상위 N 집계 */
     @Transactional(readOnly = true)
     public List<CategoryScoreDTO> categories(RankRequest req) {
         List<PlaceScoreDTO> ranked = rank(req);
