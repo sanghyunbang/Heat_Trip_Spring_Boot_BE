@@ -25,6 +25,10 @@ public class RecommenderClient {
     /** FastAPI /recommend 호출 */
     public RecommendResponse recommend(RecommendRequest req) {
         log.info("[LLM] POST /recommend");
+
+        // ⚠ 기존 문제: 파이프라인 전체 타임아웃(75s)이 소켓 읽기/쓰기(30s/15s)보다 길어서, 소켓 타임아웃이 먼저 터짐
+        // ✔ 대응: WebClientConfig에서 소켓/응답을 넉넉히(120s)로 맞췄고,
+        //         여기 전체 타임아웃은 180s(또는 제거)로 "가장 크게" 잡아 상위 레이어가 먼저 끊지 않도록 함.
         return llmWebClient.post()
                 .uri("/recommend")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -41,9 +45,12 @@ public class RecommenderClient {
                                 })
                 )
                 .bodyToMono(RecommendResponse.class)
-                .timeout(Duration.ofSeconds(75)) // 파이프라인 전체 타임아웃
+                .timeout(Duration.ofSeconds(180)) // (기존 75s → 180s) 전체 파이프라인 상한: 소켓/응답(120s)보다 반드시 길게
                 .retryWhen(Retry.backoff(2, Duration.ofMillis(300))
-                        .filter(ex -> !(ex instanceof WebClientResponseException))) // 4xx는 재시도 안함
+                        // 4xx는 재시도 안 함. 5xx/네트워크 이슈만 재시도
+                        .filter(ex -> !(ex instanceof WebClientResponseException)
+                                || ((WebClientResponseException) ex).getStatusCode().is5xxServerError())
+                )
                 .doOnError(e -> log.error("[LLM] call failed: {}", e.toString()))
                 .block();
     }
