@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Tag(name = "여행 추천 API", description = "사용자 감정(PAD) 기반의 장소 순위 및 카테고리 추천")
 @RestController
-@RequestMapping("/curation")
+@RequestMapping("api/curation")
 @RequiredArgsConstructor
 public class CurationController {
 
