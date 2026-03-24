@@ -1,13 +1,9 @@
 package com.heattrip.heat_trip_backend.OAuth.handler;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heattrip.heat_trip_backend.OAuth.jwt.JWTProvider;
 
 import java.io.IOException; 
@@ -66,8 +62,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler{
          
          System.out.println("[!] onAuthenticationSuccess() called!");
          System.out.println("[V] userId = " + userId);
-         System.out.println("[V] token = " + token);
-         System.out.println("[V] redirect = " + redirect);
 
 
         
