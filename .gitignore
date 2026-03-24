@@ -48,3 +48,13 @@ config/
 # 모든 모듈의 src/main/resources/data/ 및 src/test/resources/data/ 아래 파일 무시
 **/src/main/resources/data/**
 **/src/test/resources/data/**
+
+# internal operation docs (keep local, do not publish)
+documents/
+
+# local-only history rewrite artifacts
+replacements.txt
+
+# local-only ops workflows
+.github/workflows/deploy-backend.yml
+.github/workflows/smoke.yml
