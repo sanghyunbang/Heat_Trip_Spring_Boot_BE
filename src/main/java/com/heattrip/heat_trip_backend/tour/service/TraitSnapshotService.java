@@ -121,6 +121,7 @@ public class TraitSnapshotService {
     }
 
     snapshotRepo.saveAll(batch);
+    placeRepo.refreshAllSearchTexts();
 
     log.info("[SNAPSHOT] rebuild done: inserted={}, skipped(cat3name null/blank)={}, elapsed={} ms",
         batch.size(), skippedNoName, System.currentTimeMillis() - t0);

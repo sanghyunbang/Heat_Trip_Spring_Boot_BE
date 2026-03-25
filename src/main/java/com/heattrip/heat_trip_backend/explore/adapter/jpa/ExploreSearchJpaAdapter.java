@@ -4,28 +4,22 @@ import com.heattrip.heat_trip_backend.explore.dto.PageResponse;
 import com.heattrip.heat_trip_backend.explore.dto.PlaceSummaryDto;
 import com.heattrip.heat_trip_backend.explore.dto.search.PlaceSearchCond;
 import com.heattrip.heat_trip_backend.explore.port.ExploreSearchPort;
-import com.heattrip.heat_trip_backend.curation.entity.Cat3CategoryMapping;
-import com.heattrip.heat_trip_backend.tour.domain.Place;
-import com.heattrip.heat_trip_backend.tour.domain.PlaceTraitSnapshot;
-import jakarta.persistence.*;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-/**
- * JPA Criteria 기반 동적 검색 어댑터.
- *
- * 설계 요점
- *  - (저결합) Service는 Port(ExploreSearchPort)에만 의존하고, 실제 구현은 Adapter가 담당. ※A-1
- *  - (안정성) FK가 없는 테이블 결합은 JOIN 대신 상관 서브쿼리/EXISTS로 처리. ※A-2
- *  - (이식성) DB/엔진 교체 시 Adapter만 갈아끼우면 됨(JPA → ES 등). ※A-3
- */
 @Component
 public class ExploreSearchJpaAdapter implements ExploreSearchPort {
+
+    private static final Pattern BOOLEAN_RESERVED = Pattern.compile("[+\\-<>()~*\"@]+");
 
     private final EntityManager em;
 
@@ -33,167 +27,195 @@ public class ExploreSearchJpaAdapter implements ExploreSearchPort {
         this.em = em;
     }
 
-    // src/main/java/.../explore/adapter/jpa/ExploreSearchJpaAdapter.java
     @Override
     public PageResponse<PlaceSummaryDto> search(PlaceSearchCond c) {
-        CriteriaBuilder cb = em.getCriteriaBuilder();
+        String keyword = normalizeFullTextKeyword(c.q());
+        Map<String, Object> params = new LinkedHashMap<>();
 
-        CriteriaQuery<Tuple> cq = cb.createTupleQuery();
-        Root<Place> p = cq.from(Place.class);
+        StringBuilder from = new StringBuilder("""
+            FROM places p
+            LEFT JOIN place_trait_snapshots s ON s.cat3 = p.cat3
+            WHERE 1=1
+            """);
 
-        Subquery<String> cat3nameSq   = subSelectString(cq, cb, p, "cat3Name");
-        Subquery<String> shortDesc1Sq = subSelectString(cq, cb, p, "shortDesc1");
-        Subquery<String> shortDesc2Sq = subSelectString(cq, cb, p, "shortDesc2");
+        if (keyword != null) {
+            from.append("\n  AND MATCH(p.search_text) AGAINST (:keyword IN BOOLEAN MODE)");
+            params.put("keyword", keyword);
+        }
 
-        List<Predicate> predicates = buildPredicates(cb, cq, p, c);
+        if (c.contentTypeId() != null) {
+            from.append("\n  AND p.contenttypeid = :contentTypeId");
+            params.put("contentTypeId", String.valueOf(c.contentTypeId()));
+        }
 
-        cq.multiselect(
-            p.get("contentid").alias("contentid"),
-            p.get("title").alias("title"),
-            p.get("firstimage").alias("firstimage"),
-            p.get("areacode").alias("areacode"),
-            p.get("sigungucode").alias("sigungucode"),
-            p.get("createdtime").alias("createdtime"),
-            p.get("addr1").alias("addr1"),
-            p.get("addr2").alias("addr2"),
-            p.get("firstimage2").alias("firstimage2"),
-            p.get("contenttypeid").alias("contenttypeid"),
-            p.get("cat3").alias("cat3"),
-            cat3nameSq.getSelection().alias("cat3Name"),
-            shortDesc1Sq.getSelection().alias("shortDesc1"),
-            shortDesc2Sq.getSelection().alias("shortDesc2")
-        ).where(predicates.toArray(Predicate[]::new));
+        if (c.cat3() != null && !c.cat3().isEmpty()) {
+            appendInClause(from, params, "p.cat3", "cat3", c.cat3());
+        }
 
-        cq.orderBy(buildOrder(cb, p, c.sort()));
+        if (c.emotionCategoryId() != null) {
+            from.append("""
 
-        TypedQuery<Tuple> query = em.createQuery(cq)
-            .setFirstResult(c.offset())
-            .setMaxResults(c.limit());
+                  AND EXISTS (
+                      SELECT 1
+                      FROM cat3_category_mapping m
+                      WHERE m.category_id = :emotionCategoryId
+                        AND m.cat3_code = p.cat3
+                  )
+                """);
+            params.put("emotionCategoryId", c.emotionCategoryId());
+        }
 
-        List<Tuple> tuples = query.getResultList();
+        String selectSql = """
+            SELECT
+                p.contentid,
+                p.title,
+                p.firstimage,
+                p.areacode,
+                p.sigungucode,
+                p.createdtime,
+                p.addr1,
+                p.addr2,
+                p.firstimage2,
+                p.contenttypeid,
+                p.cat3,
+                s.cat3name,
+                s.short_desc1,
+                s.short_desc2
+            """ + from + buildOrderBy(c.sort());
 
-        CriteriaQuery<Long> countCq = cb.createQuery(Long.class);
-        Root<Place> p2 = countCq.from(Place.class);
-        List<Predicate> predsForCount = buildPredicates(cb, countCq, p2, c);
-        countCq.select(cb.count(p2)).where(predsForCount.toArray(Predicate[]::new));
-        long total = em.createQuery(countCq).getSingleResult();
+        Query query = em.createNativeQuery(selectSql);
+        bindParameters(query, params);
+        query.setFirstResult(c.offset());
+        query.setMaxResults(c.limit());
 
-        List<PlaceSummaryDto> content = tuples.stream().map(t -> {
-            Long contentid = t.get("contentid", Long.class);
-            String title = t.get("title", String.class);
-            String firstimage = t.get("firstimage", String.class);
-            Integer areacode = t.get("areacode", Integer.class);
-            Integer sigungucode = t.get("sigungucode", Integer.class);
-            java.time.LocalDateTime createdtime = t.get("createdtime", java.time.LocalDateTime.class);
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = query.getResultList();
 
-            PlaceSummaryDto dto = new PlaceSummaryDto(
-                contentid, title, firstimage, areacode, sigungucode, createdtime
-            );
-            dto.setAddr1(t.get("addr1", String.class));
-            dto.setAddr2(t.get("addr2", String.class));
-            dto.setFirstimage2(t.get("firstimage2", String.class));
-            dto.setCat3(t.get("cat3", String.class));
-            dto.setCat3Name(t.get("cat3Name", String.class));
-            dto.setShortDesc1(t.get("shortDesc1", String.class));
-            dto.setShortDesc2(t.get("shortDesc2", String.class));
-            dto.setContentTypeId(parseIntOrNull(t.get("contenttypeid", String.class)));
+        String countSql = "SELECT COUNT(*) " + from;
+        Query countQuery = em.createNativeQuery(countSql);
+        bindParameters(countQuery, params);
+        long total = ((Number) countQuery.getSingleResult()).longValue();
 
-            dto.setHashtags(java.util.Collections.emptyList());
-            dto.setSimpleTags(java.util.Collections.emptyList());
-            return dto;
-        }).toList();
+        List<PlaceSummaryDto> content = rows.stream()
+            .map(this::toDto)
+            .toList();
 
-        int page = (c.page() == null) ? 0 : c.page();
-        int size = (c.size() == null) ? 20 : c.size();
-        boolean last = ((page + 1) * size) >= total;
+        int page = c.page() == null ? 0 : c.page();
+        int size = c.size() == null ? 20 : c.size();
+        boolean last = ((long) (page + 1) * size) >= total;
 
-        // ✅ PageResponse 시그니처 통일
         return new PageResponse<>(content, page, size, total, last);
     }
 
-
-    // ─────────────────────────────────────────────
-    // 헬퍼: WHERE 동적 구성
-    // ─────────────────────────────────────────────
-    private <T> List<Predicate> buildPredicates(
-            CriteriaBuilder cb, CriteriaQuery<T> cq, Root<Place> p, PlaceSearchCond c
-    ) {
-        List<Predicate> preds = new ArrayList<>();
-
-        // q: title/cat1/cat2/cat3 + cat3Name LIKE(EXISTS) ※D-1
-        if (c.q() != null && !c.q().isBlank()) {
-            String like = "%" + c.q().trim().toLowerCase() + "%";
-
-            // PlaceTraitSnapshot 에서 cat3name LIKE 확인 (EXISTS 상관 서브쿼리)
-            Subquery<Integer> nameExists = cq.subquery(Integer.class);
-            Root<PlaceTraitSnapshot> t = nameExists.from(PlaceTraitSnapshot.class);
-            nameExists.select(cb.literal(1))
-                    .where(
-                            cb.equal(t.get("cat3"), p.get("cat3")),
-                            cb.like(cb.lower(t.get("cat3Name")), like)
-                    );
-
-            preds.add(cb.or(
-                    cb.like(cb.lower(p.get("title")), like),
-                    cb.like(cb.lower(p.get("cat1")), like),
-                    cb.like(cb.lower(p.get("cat2")), like),
-                    cb.like(cb.lower(p.get("cat3")), like),
-                    cb.exists(nameExists)
-            ));
+    private void appendInClause(StringBuilder sql, Map<String, Object> params, String column, String prefix, List<String> values) {
+        sql.append("\n  AND ").append(column).append(" IN (");
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) {
+                sql.append(", ");
+            }
+            String key = prefix + i;
+            sql.append(":").append(key);
+            params.put(key, values.get(i));
         }
-
-        // contentTypeId (DB는 VARCHAR → 문자열 비교가 안전) ※D-2
-        if (c.contentTypeId() != null) {
-            preds.add(cb.equal(p.get("contenttypeid"), String.valueOf(c.contentTypeId())));
-        }
-
-        // cat3 IN
-        if (c.cat3() != null && !c.cat3().isEmpty()) {
-            preds.add(p.get("cat3").in(c.cat3()));
-        }
-
-        // emotionCategoryId → cat3_category_mapping EXISTS ※D-3
-        if (c.emotionCategoryId() != null) {
-            Subquery<Integer> mapExists = cq.subquery(Integer.class);
-            Root<Cat3CategoryMapping> m = mapExists.from(Cat3CategoryMapping.class);
-            mapExists.select(cb.literal(1))
-                    .where(
-                            cb.equal(m.get("categoryId"), c.emotionCategoryId()),
-                            cb.equal(m.get("cat3Code"), p.get("cat3"))
-                    );
-            preds.add(cb.exists(mapExists));
-        }
-
-        return preds;
+        sql.append(")");
     }
 
-    // ─────────────────────────────────────────────
-    // 헬퍼: 상관 스칼라 서브쿼리 (String 컬럼 1개)
-    // ─────────────────────────────────────────────
-    private Subquery<String> subSelectString(
-            CriteriaQuery<?> parent, CriteriaBuilder cb, Root<Place> p, String column
-    ) {
-        Subquery<String> sq = parent.subquery(String.class);
-        Root<PlaceTraitSnapshot> t = sq.from(PlaceTraitSnapshot.class);
-        sq.select(t.get(column)).where(cb.equal(t.get("cat3"), p.get("cat3")));
-        return sq;
+    private void bindParameters(Query query, Map<String, Object> params) {
+        params.forEach(query::setParameter);
     }
 
-    // ─────────────────────────────────────────────
-    // 헬퍼: 정렬 (Order 반환)
-    // ─────────────────────────────────────────────
-    private Order buildOrder(CriteriaBuilder cb, Root<Place> p, String sort) {
-        if (sort == null) sort = "";
+    private String buildOrderBy(String sort) {
+        if (sort == null) {
+            sort = "";
+        }
         return switch (sort) {
-            case "title"  -> cb.asc(p.get("title"));
-            case "recent" -> cb.desc(p.get("modifiedtime"));   // 최신 수정 시간
-            case "random" -> cb.asc(cb.function("RAND", Double.class)); // ★ Order 로 래핑
-            default       -> cb.desc(p.get("contentid"));      // 안전 기본값
+            case "title" -> "\n ORDER BY p.title ASC, p.contentid DESC";
+            case "recent" -> "\n ORDER BY p.modifiedtime DESC, p.contentid DESC";
+            case "random" -> "\n ORDER BY RAND()";
+            default -> "\n ORDER BY p.contentid DESC";
         };
     }
 
+    private PlaceSummaryDto toDto(Object[] row) {
+        PlaceSummaryDto dto = new PlaceSummaryDto(
+            toLong(row[0]),
+            toString(row[1]),
+            toString(row[2]),
+            toInteger(row[3]),
+            toInteger(row[4]),
+            toLocalDateTime(row[5])
+        );
+        dto.setAddr1(toString(row[6]));
+        dto.setAddr2(toString(row[7]));
+        dto.setFirstimage2(toString(row[8]));
+        dto.setContentTypeId(parseIntOrNull(toString(row[9])));
+        dto.setCat3(toString(row[10]));
+        dto.setCat3Name(toString(row[11]));
+        dto.setShortDesc1(toString(row[12]));
+        dto.setShortDesc2(toString(row[13]));
+        dto.setHashtags(Collections.emptyList());
+        dto.setSimpleTags(Collections.emptyList());
+        return dto;
+    }
+
+    private String normalizeFullTextKeyword(String q) {
+        if (q == null || q.isBlank()) {
+            return null;
+        }
+        String sanitized = BOOLEAN_RESERVED.matcher(q.trim()).replaceAll(" ");
+        sanitized = sanitized.replaceAll("\\s+", " ").trim();
+        return sanitized.isEmpty() ? null : sanitized;
+    }
+
+    private String toString(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private Integer toInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Long toLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(String.valueOf(value));
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime;
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toLocalDateTime();
+        }
+        return LocalDateTime.parse(String.valueOf(value).replace(" ", "T"));
+    }
+
     private Integer parseIntOrNull(String s) {
-        if (s == null) return null;
-        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return null; }
+        if (s == null) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

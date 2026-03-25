@@ -7,6 +7,7 @@ import com.heattrip.heat_trip_backend.tour.util.Sanitizers;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -72,6 +73,10 @@ public class Place {
 
     private String contenttypeid;
 
+    @Lob
+    @Column(name = "search_text", columnDefinition = "LONGTEXT")
+    private String searchText;
+
     // private String createdtime;
     // private String modifiedtime;
     // 빠른 정렬/필터링 위해서 varchar -> LocalDateTime으로 타입 변경
@@ -90,5 +95,19 @@ public class Place {
         this.addr1 = Sanitizers.truncate(this.addr1, ADDR_MAX_LEN);
         this.addr2 = Sanitizers.truncate(this.addr2, ADDR_MAX_LEN);
         this.zipcode = Sanitizers.truncate(this.zipcode, ZIPCODE_MAX_LEN);
+        this.searchText = buildBaseSearchText();
+    }
+
+    private String buildBaseSearchText() {
+        return String.join(" ",
+            safeToken(title),
+            safeToken(cat1),
+            safeToken(cat2),
+            safeToken(cat3)
+        ).trim();
+    }
+
+    private String safeToken(String value) {
+        return value == null ? "" : value.trim();
     }
 }
