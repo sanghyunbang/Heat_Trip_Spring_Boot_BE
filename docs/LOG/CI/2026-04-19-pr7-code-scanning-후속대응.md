@@ -1,4 +1,4 @@
-# 2026-04-19 PR #7 Code Scanning Follow-Up
+# 2026-04-19 PR #7 Code Scanning 후속 대응
 
 ## 개요
 
@@ -175,9 +175,9 @@ PR에 남은 bot 코멘트는 리뷰 히스토리로 남는다.
 - 나중에 PR 기록만 봐도 왜 수정했는지 남고
 - reviewer나 팀원이 대응 여부를 빠르게 이해할 수 있다.
 
-## 이번 후속 대응에서 남길 메시지 기준
+## 이번 후속 대응에서 남긴 메시지 기준
 
-답글에서는 보통 다음을 짧게 남기는 것이 적절하다.
+답글에서는 다음을 짧게 남겼다.
 
 - nullable 컬렉션을 명시적으로 비-null 리스트로 정규화했다
 - nested category/activity stream 호출도 null-safe한 형태로 바꿨다
@@ -190,14 +190,18 @@ PR에 남은 bot 코멘트는 리뷰 히스토리로 남는다.
 - 기존 테스트가 깨지지 않는지
 - recommendation 흐름이 그대로 동작하는지
 
-권장 검증:
+실행:
 
 - `./gradlew.bat test`
+
+결과:
+
+- 테스트 통과
 
 ## 관련 파일
 
 - `src/main/java/com/heattrip/heat_trip_backend/curation/service/CurationRecommendService.java`
-- `docs/CI/2026-04-19-pr7-code-scanning-follow-up.md`
+- `docs/LOG/CI/2026-04-19-pr7-code-scanning-후속대응.md`
 
 ## 요약
 
