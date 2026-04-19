@@ -1,15 +1,17 @@
-// src/main/java/com/heattrip/heat_trip_backend/curation/service/CurationRecommendService.java
 package com.heattrip.heat_trip_backend.curation.service;
 
+import com.heattrip.heat_trip_backend.curation.dto.LlmRecommendRequest;
+import com.heattrip.heat_trip_backend.curation.dto.LlmRecommendResponse;
 import com.heattrip.heat_trip_backend.curation.dto.PlaceScoreDTO;
 import com.heattrip.heat_trip_backend.curation.dto.RankRequest;
-import com.heattrip.heat_trip_backend.curation.dto.RecommendResultDTO;
-import com.heattrip.heat_trip_backend.llm.RecommenderClient;
+import com.heattrip.heat_trip_backend.curation.dto.RecommendResultDto;
+import com.heattrip.heat_trip_backend.curation.port.RecommendationPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Slf4j
@@ -17,75 +19,83 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CurationRecommendService {
 
-    private final RecommenderClient recommender;
+    // 추천 생성은 외부 구현체에 직접 의존하지 않고 port를 통해 위임한다.
+    private final RecommendationPort recommender;
     private final Cat3DictionaryService cat3Dict;
     private final ScoringService scoring;
 
-    public RecommendResultDTO recommend(RankRequest in) {
+    public RecommendResultDto recommend(RankRequest in) {
 
-        // 1) cat3Filter가 있으면 LLM 생략
+        // 이미 CAT3 필터가 있으면 LLM 단계를 건너뛰고 바로 내부 랭킹을 수행한다.
         if (in.getCat3Filter() != null && !in.getCat3Filter().isEmpty()) {
             log.info("Skip LLM: client provided cat3Filter(size={})", in.getCat3Filter().size());
             List<PlaceScoreDTO> ranked = scoring.rank(in);
-            return RecommendResultDTO.builder()
-                    .places(ranked)
-                    .llm(null)
-                    .cat3FromLlm(null)
-                    .build();
+            return new RecommendResultDto(ranked, null, null);
         }
 
-        // 2) LLM 호출 요청 빌드
-        var llmReq = RecommenderClient.RecommendRequest.builder()
-                .pleasure(in.getPad().getPleasure())
-                .arousal(in.getPad().getArousal())
-                .dominance(in.getPad().getDominance())
-                .energy(in.getEnergy())
-                .social(in.getSocialNeed())
-                .moodKey(in.getMoodKey())
-                .purposeKeywords(in.getPurposeKeywords())
-                .notes(in.getNotes())
-                .build();
+        // 사용자 감정값(PAD)과 의도 정보를 외부 추천 요청 DTO로 변환한다.
+        var llmReq = new LlmRecommendRequest(
+                in.getPad().getPleasure(),
+                in.getPad().getArousal(),
+                in.getPad().getDominance(),
+                in.getEnergy(),
+                in.getSocialNeed(),
+                in.getMoodKey(),
+                in.getPurposeKeywords(),
+                in.getNotes()
+        );
 
-        // FastAPI 호출
-        var res = recommender.recommend(llmReq);
+        // 추천 응답이 null이면 외부 추천 계약이 깨진 것으로 보고 즉시 실패시킨다.
+        var res = Objects.requireNonNull(
+                recommender.getRecommendation(llmReq),
+                "Recommendation response must not be null"
+        );
 
-        // 3) LLM 라벨 → CAT3 코드 집합(랭킹 필터용)
-        var labels = res.getCategoryGroups().stream()
-                .flatMap(g -> g.getCategories().stream())
+        // LLM이 반환한 카테고리 라벨을 내부 랭킹용 CAT3 코드로 변환한다.
+        var categoryGroups = Objects.requireNonNullElse(
+                res.getCategoryGroups(),
+                List.<LlmRecommendResponse.CategoryGroup>of()
+        );
+
+        var labels = categoryGroups.stream()
+                .flatMap(group -> {
+                    var categories = Objects.requireNonNullElse(group.getCategories(), List.<String>of());
+                    return categories.stream();
+                })
                 .toList();
+
         Set<String> cat3 = cat3Dict.resolveCat3Codes(labels);
         in.setCat3Filter(cat3.stream().toList());
 
-        // 4) 랭킹 계산
+        // 실제 관광지 점수 계산과 정렬은 기존 모놀리식의 도메인 로직에서 처리한다.
         List<PlaceScoreDTO> ranked = scoring.rank(in);
 
-        // 5) LLM 메타 구성 (그대로 프론트에 전달)
-        var llmMeta = RecommendResultDTO.LlmMeta.builder()
-                .schemaVersion(res.getSchemaVersion())
-                .emotionDiagnosis(res.getEmotionDiagnosis())
-                .themeName(res.getThemeName())
-                .themeDescription(res.getThemeDescription())
-                .categoryGroups(res.getCategoryGroups().stream()
-                        .map(g -> RecommendResultDTO.LlmMeta.CategoryGroup.builder()
-                                .groupName(g.getGroupName())
-                                .categories(g.getCategories())
-                                .build())
-                        .toList())
-                .activities(res.getActivities().stream()
-                        .map(a -> RecommendResultDTO.LlmMeta.Activity.builder()
-                                .title(a.getTitle())
-                                .description(a.getDescription())
-                                .build())
-                        .toList())
-                .keywords(res.getKeywords())
-                .comfortLetter(res.getComfortLetter())
-                .build();
+        // 클라이언트가 활용할 수 있도록 LLM 메타데이터를 응답에 그대로 포함한다.
+        var llmMeta = new RecommendResultDto.LlmMeta(
+                res.getSchemaVersion(),
+                res.getEmotionDiagnosis(),
+                res.getThemeName(),
+                res.getThemeDescription(),
+                categoryGroups.stream()
+                        .map(group -> new RecommendResultDto.LlmMeta.CategoryGroup(
+                                group.getGroupName(),
+                                group.getCategories()
+                        ))
+                        .toList(),
+                Objects.requireNonNullElse(
+                        res.getActivities(),
+                        List.<LlmRecommendResponse.Activity>of()
+                ).stream()
+                        .map(activity -> new RecommendResultDto.LlmMeta.Activity(
+                                activity.getTitle(),
+                                activity.getDescription()
+                        ))
+                        .toList(),
+                res.getKeywords(),
+                res.getComfortLetter()
+        );
 
-        // 6) 최종 반환 — cat3FromLlm만 유지
-        return RecommendResultDTO.builder()
-                .places(ranked)
-                .llm(llmMeta)
-                .cat3FromLlm(in.getCat3Filter())
-                .build();
+        // 최종 응답은 추천 메타데이터와 랭킹 결과를 함께 반환한다.
+        return new RecommendResultDto(ranked, llmMeta, in.getCat3Filter());
     }
 }
