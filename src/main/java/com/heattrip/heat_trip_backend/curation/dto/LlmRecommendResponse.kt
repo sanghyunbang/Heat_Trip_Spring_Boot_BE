@@ -3,29 +3,36 @@ package com.heattrip.heat_trip_backend.curation.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class LlmRecommendResponse(
-    @get:JsonProperty("schema_version")
+    @field:JsonProperty("schema_version")
+    @param:JsonProperty("schema_version")
     val schemaVersion: Int = 0,
 
-    @get:JsonProperty("emotion_diagnosis")
+    @field:JsonProperty("emotion_diagnosis")
+    @param:JsonProperty("emotion_diagnosis")
     val emotionDiagnosis: String? = null,
 
-    @get:JsonProperty("theme_name")
+    @field:JsonProperty("theme_name")
+    @param:JsonProperty("theme_name")
     val themeName: String? = null,
 
-    @get:JsonProperty("theme_description")
+    @field:JsonProperty("theme_description")
+    @param:JsonProperty("theme_description")
     val themeDescription: String? = null,
 
-    @get:JsonProperty("category_groups")
+    @field:JsonProperty("category_groups")
+    @param:JsonProperty("category_groups")
     val categoryGroups: List<CategoryGroup>? = null,
 
     val activities: List<Activity>? = null,
     val keywords: List<String>? = null,
 
-    @get:JsonProperty("comfort_letter")
+    @field:JsonProperty("comfort_letter")
+    @param:JsonProperty("comfort_letter")
     val comfortLetter: String? = null
 ) {
     data class CategoryGroup(
-        @get:JsonProperty("group_name")
+        @field:JsonProperty("group_name")
+        @param:JsonProperty("group_name")
         val groupName: String? = null,
         val categories: List<String>? = null
     )
