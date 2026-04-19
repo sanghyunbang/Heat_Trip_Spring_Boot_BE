@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -52,16 +53,13 @@ public class CurationRecommendService {
         );
 
         // LLM이 반환한 카테고리 라벨을 내부 랭킹용 CAT3 코드로 변환한다.
-        var categoryGroups = Objects.requireNonNullElse(
-                res.getCategoryGroups(),
-                List.<LlmRecommendResponse.CategoryGroup>of()
-        );
+        List<LlmRecommendResponse.CategoryGroup> categoryGroups =
+                res.getCategoryGroups() == null ? List.of() : res.getCategoryGroups();
 
         var labels = categoryGroups.stream()
-                .flatMap(group -> {
-                    var categories = Objects.requireNonNullElse(group.getCategories(), List.<String>of());
-                    return categories.stream();
-                })
+                .flatMap(group -> group.getCategories() == null
+                        ? Stream.<String>empty()
+                        : group.getCategories().stream())
                 .toList();
 
         Set<String> cat3 = cat3Dict.resolveCat3Codes(labels);
@@ -71,6 +69,9 @@ public class CurationRecommendService {
         List<PlaceScoreDTO> ranked = scoring.rank(in);
 
         // 클라이언트가 활용할 수 있도록 LLM 메타데이터를 응답에 그대로 포함한다.
+        List<LlmRecommendResponse.Activity> activities =
+                res.getActivities() == null ? List.of() : res.getActivities();
+
         var llmMeta = new RecommendResultDto.LlmMeta(
                 res.getSchemaVersion(),
                 res.getEmotionDiagnosis(),
@@ -82,10 +83,7 @@ public class CurationRecommendService {
                                 group.getCategories()
                         ))
                         .toList(),
-                Objects.requireNonNullElse(
-                        res.getActivities(),
-                        List.<LlmRecommendResponse.Activity>of()
-                ).stream()
+                activities.stream()
                         .map(activity -> new RecommendResultDto.LlmMeta.Activity(
                                 activity.getTitle(),
                                 activity.getDescription()
