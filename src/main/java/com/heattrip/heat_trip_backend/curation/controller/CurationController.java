@@ -3,7 +3,7 @@ package com.heattrip.heat_trip_backend.curation.controller;
 import com.heattrip.heat_trip_backend.curation.dto.CategoryScoreDTO;
 import com.heattrip.heat_trip_backend.curation.dto.PlaceScoreDTO;
 import com.heattrip.heat_trip_backend.curation.dto.RankRequest;
-import com.heattrip.heat_trip_backend.curation.dto.RecommendResultDTO;
+import com.heattrip.heat_trip_backend.curation.dto.RecommendResultDto;
 import com.heattrip.heat_trip_backend.curation.service.CurationRecommendService;
 import com.heattrip.heat_trip_backend.curation.service.ScoringService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,7 +41,7 @@ public class CurationController {
     }
 
     @PostMapping("/recommend")
-    public RecommendResultDTO recommend(@RequestBody RankRequest req) {
+    public RecommendResultDto recommend(@RequestBody RankRequest req) {
         return orchestration.recommend(req);
     }
 }
