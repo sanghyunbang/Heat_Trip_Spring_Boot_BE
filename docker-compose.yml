@@ -2,8 +2,14 @@ services:
   app:
     build: .
     container_name: heattrip-backend
+    env_file:
+      - .env
     environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
       - SERVER_ADDRESS=0.0.0.0
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-heat_trip_db}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-heattrip}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD}
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
