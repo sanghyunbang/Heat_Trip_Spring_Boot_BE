@@ -16,6 +16,14 @@
 | 기술 Wiki | 구현 상세, 테스트 결과, 기술 의사결정 기록 | [GitHub Wiki](https://github.com/sanghyunbang/Heat_Trip_Spring_Boot_BE/wiki) |
 | 리팩토링 블로그 | 리팩토링 과정과 학습 기록 | [Heat Trip 프로젝트 리펙토링](https://velog.io/@sanghyunbang/series/Heat-Trip-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EB%A6%AC%ED%8E%99%ED%86%A0%EB%A7%81) |
 
+## 관련 리포지토리
+
+| 리포지토리 | 역할 |
+| --- | --- |
+| [Heat_Trip_Spring_Boot_BE](https://github.com/sanghyunbang/Heat_Trip_Spring_Boot_BE) | Spring Boot 백엔드 API, 인증, 검색, 큐레이션, 일정, 미디어 관리 |
+| [heat_trip_flutter](https://github.com/sanghyunbang/heat_trip_flutter) | Flutter 클라이언트 애플리케이션 |
+| [heattrip_rec_py](https://github.com/sanghyunbang/heattrip_rec_py) | Python 기반 추천 서버, LLM 추천 엔진 |
+
 ## 프로젝트 소개
 
 Heat Trip은 Flutter 클라이언트에서 여행지를 탐색하고, 감정/취향 기반 추천과 일정 관리까지 이어갈 수 있도록 설계한 Spring Boot 백엔드 프로젝트입니다.
