@@ -43,7 +43,7 @@ public class KakaoLocalClient {
      * @param query 검색 키워드(예: 장소명) — 서버가 URL 인코딩을 자동 처리. [6]
      * @param x     중심 경도(longitude) — Kakao는 'x'를 경도로 사용. [7]
      * @param y     중심 위도(latitude)  — Kakao는 'y'를 위도로 사용.  [7]
-     * @return Mono<KakaoKeywordResponse> (비동기 단일값) — 호출부에서 .block() 또는 reactive 체인으로 사용. [5][8]
+     * @return {@code Mono<KakaoKeywordResponse>} (비동기 단일값) — 호출부에서 .block() 또는 reactive 체인으로 사용. [5][8]
      */
     public Mono<KakaoKeywordResponse> searchKeyword(String query, double x, double y) {
         return kakaoWebClient

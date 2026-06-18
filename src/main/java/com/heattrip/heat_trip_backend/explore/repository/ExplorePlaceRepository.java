@@ -16,7 +16,7 @@ import org.springframework.data.repository.query.Param;
  * 읽기 전용 조회(요약 리스트)용 Repository.
  * - Spring Data JPA의 @Query(JPQL) + "DTO 생성자 표현식(NEW ...)"을 사용하여
  *   엔티티를 바로 DTO로 투영해 반환합니다.
- * - Page<T> 반환이므로 Spring Data가 count 쿼리도 함께 실행해 총 개수를 계산합니다.
+ * - {@code Page<T>} 반환이므로 Spring Data가 count 쿼리도 함께 실행해 총 개수를 계산합니다.
  *
  * 주의(중요):
  * 1) 아래 @Query는 "JPQL"입니다(네이티브 SQL 아님). 따라서 FROM 절의 대상은 "테이블"이 아니라 "엔티티 클래스(Place)"여야 하고,
@@ -60,7 +60,7 @@ public interface ExplorePlaceRepository extends JpaRepository<Place, Long>{
      *                     - Page 반환이므로 COUNT 쿼리도 함께 수행되어 totalElements가 계산됩니다.
      *                       대용량에서 count 비용이 크면 Slice 반환으로 바꾸는 것도 방법입니다.
      *
-     * @return Page<PlaceSummaryDto> 페이징된 요약 DTO 목록 + 페이지 메타 정보
+     * @return {@code Page<PlaceSummaryDto>} 페이징된 요약 DTO 목록 + 페이지 메타 정보
      *
      * 동작 개요:
      * - 엔티티 Place를 FROM으로 조회하고, 필요한 필드만 뽑아 NEW PlaceSummaryDto(...)로 즉시 매핑.

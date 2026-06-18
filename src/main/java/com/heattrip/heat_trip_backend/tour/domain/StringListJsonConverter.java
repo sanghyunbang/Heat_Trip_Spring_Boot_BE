@@ -8,9 +8,9 @@ import jakarta.persistence.Converter;
 import java.util.List;
 
 /**
- * List<String> <-> JSON 문자열을 자동 변환하는 JPA 컨버터.
+ * {@code List<String>}과 JSON 문자열을 자동 변환하는 JPA 컨버터.
  * - 스냅샷 테이블의 해시태그/심플태그 컬럼에 적용하여
- *   DB에는 TEXT(JSON)로 저장, 애플리케이션에서는 List<String>으로 사용.
+ *   DB에는 TEXT(JSON)로 저장, 애플리케이션에서는 {@code List<String>}으로 사용.
  */
 @Converter(autoApply = false)
 public class StringListJsonConverter implements AttributeConverter<List<String>, String> {
