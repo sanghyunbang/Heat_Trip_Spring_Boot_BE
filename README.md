@@ -1,8 +1,13 @@
-# Heat Trip Backend
+﻿# Heat Trip Backend
 
 Spring Boot 기반 여행 추천 및 일정 관리 백엔드입니다.
 
 이 저장소는 public 전환을 전제로 정리 중입니다. 코드와 예시 설정만 저장소에 두고, 실제 운영 비밀값과 운영 runbook, 배포 상세는 저장소 밖에서 관리하는 구조를 기준으로 합니다.
+
+## Project Links
+
+- Portfolio / project overview: [Heat Trip Notion](https://app.notion.com/p/Heat-Trip-321b82bc8b718166a51fd382c51d96b5?source=copy_link)
+- Refactoring notes: [코틀린 관련 플러그인과 라이브러리](https://velog.io/@sanghyunbang/%EC%BD%94%ED%8B%80%EB%A6%B0-%EA%B4%80%EB%A0%A8-%ED%94%8C%EB%9F%AC%EA%B7%B8%EC%9D%B8%EA%B3%BC-%EB%9D%BC%EC%9D%B4%EB%B8%8C%EB%9F%AC%EB%A6%AC)
 
 ## Stack
 
@@ -23,16 +28,14 @@ Spring Boot 기반 여행 추천 및 일정 관리 백엔드입니다.
 다음 예시 파일을 복사해서 로컬 실행용 설정을 준비합니다.
 
 - `.env.example`
-- `application-private.properties.example`
 
 예시:
 
 ```bash
 cp .env.example .env
-cp application-private.properties.example application-private.properties
 ```
 
-Docker 실행 시에는 `./config/application-private.properties` 경로로 마운트해도 됩니다.
+로컬 개발 실행은 `.env`의 `SPRING_PROFILES_ACTIVE=dev`를 사용합니다. 운영 배포는 서버의 `.env`에서 `SPRING_PROFILES_ACTIVE=prod`로 지정합니다.
 
 ### 2. Secrets injection
 
@@ -55,20 +58,34 @@ docker compose up -d --build
 ### 4. Run with Gradle
 
 ```bash
-./gradlew bootRun
+SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
 ```
 
 Windows:
 
 ```powershell
+$env:SPRING_PROFILES_ACTIVE="dev"
 .\gradlew.bat bootRun
 ```
 
 ## Config Layout
 
 - Public base config: `src/main/resources/application.properties`
-- Private local or runtime config: `application-private.properties`
-- Docker environment: `.env`
+- Development profile: `src/main/resources/application-dev.properties`
+- Production profile: `src/main/resources/application-prod.properties`
+- Test overrides: local to individual tests, for example `@DataJpaTest(properties = ...)`
+- Local/runtime secrets: `.env`
+
+The base config contains shared non-secret defaults only. Profile files contain environment-specific wiring. Secrets are injected through `.env` or real environment variables.
+
+Docker MySQL initialization values live in `.env` and are read by `docker-compose.yml` under `services.mysql.environment`:
+
+- `MYSQL_ROOT_PASSWORD`
+- `MYSQL_DATABASE`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+
+These values are applied only when the `mysql_data` volume is first created. Changing them later does not update an existing MySQL volume automatically.
 
 LLM recommender base URL examples:
 
@@ -98,8 +115,7 @@ GitHub Actions에서 `gitleaks` 기반 secret scan을 실행합니다.
 
 운영에서는 애플리케이션 내부 제한만으로 끝내지 말고, gateway / WAF / edge 계층의 1차 제한을 같이 두는 편이 안전합니다.
 
-## Public Conversion Policy
+## Documentation Policy
 
-- `documents/` 는 로컬 전용 내부 문서로 유지하고 Git 추적에서 제외합니다.
-- 운영용 workflow 와 history cleanup 보조 파일도 로컬 전용으로 관리합니다.
-- public 전환 전에는 history rewrite 와 secret scan 재검증이 필요합니다.
+- `docs/` 아래에서 역할별로 문서를 관리합니다.
+- 운영용 workflow 와 내부 배포 상세는 로컬 전용으로 관리합니다.
