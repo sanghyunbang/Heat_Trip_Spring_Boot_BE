@@ -49,9 +49,6 @@ config/
 **/src/main/resources/data/**
 **/src/test/resources/data/**
 
-# internal operation docs (keep local, do not publish)
-documents/
-
 # local-only history rewrite artifacts
 replacements.txt
 
