@@ -1,5 +1,5 @@
-# Copy to backend.tf locally and fill with your own remote state bucket.
-# Do not commit account-specific backend config.
+# 로컬에서 backend.tf로 복사한 뒤, 본인 AWS 계정의 remote state bucket으로 바꾼다.
+# 계정별 backend 설정은 커밋하지 않는다.
 terraform {
   backend "s3" {
     bucket         = "change-me-terraform-state-bucket"
@@ -9,4 +9,3 @@ terraform {
     encrypt        = true
   }
 }
-

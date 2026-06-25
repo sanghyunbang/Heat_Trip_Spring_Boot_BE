@@ -12,7 +12,7 @@ allowed_ssh_cidr_blocks = [
   "203.0.113.10/32"
 ]
 
-# Prefer a VPC CIDR or loader private subnet CIDR. Do not use 0.0.0.0/0 for staging.
+# VPC CIDR 또는 Loader private subnet CIDR를 권장한다. staging에서도 0.0.0.0/0은 쓰지 않는다.
 backend_app_allowed_cidr_blocks = [
   "10.0.0.0/16"
 ]
@@ -20,8 +20,8 @@ backend_app_allowed_cidr_blocks = [
 repo_url    = "https://github.com/<owner>/<repo>.git"
 repo_branch = "k6-load-tests"
 
-# Store the full backend .env file in SSM Parameter Store as SecureString.
-# That .env should include APP_PUBLISHED_HOST=0.0.0.0 for loader access.
+# backend .env 전체 내용을 SSM Parameter Store SecureString으로 저장한다.
+# Loader 접근이 필요하면 해당 .env에 APP_PUBLISHED_HOST=0.0.0.0을 포함한다.
 app_env_ssm_parameter_name = "/heat-trip/staging/backend/env"
 
 enable_observability = true
@@ -29,4 +29,3 @@ enable_observability = true
 tags = {
   Owner = "change-me"
 }
-
