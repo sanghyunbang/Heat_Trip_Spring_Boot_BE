@@ -61,7 +61,11 @@ replacements.txt
 *.tfstate
 *.tfstate.*
 *.tfvars
+*.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
 !*.tfvars.example
+infra/terraform/**/backend.tf
 crash.log
 crash.*.log
 override.tf

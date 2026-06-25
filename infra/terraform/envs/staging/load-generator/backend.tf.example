@@ -1,0 +1,12 @@
+# Copy to backend.tf locally and fill with your own remote state bucket.
+# Do not commit account-specific backend config.
+terraform {
+  backend "s3" {
+    bucket         = "change-me-terraform-state-bucket"
+    key            = "heat-trip/staging/load-generator/terraform.tfstate"
+    region         = "ap-northeast-2"
+    dynamodb_table = "change-me-terraform-locks"
+    encrypt        = true
+  }
+}
+

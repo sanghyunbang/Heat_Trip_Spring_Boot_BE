@@ -1,0 +1,32 @@
+aws_region  = "ap-northeast-2"
+name_prefix = "heat-trip-staging"
+
+vpc_id    = "vpc-xxxxxxxxxxxxxxxxx"
+subnet_id = "subnet-xxxxxxxxxxxxxxxxx"
+key_name  = "change-me-keypair"
+
+instance_type       = "t3.medium"
+root_volume_size_gb = 40
+
+allowed_ssh_cidr_blocks = [
+  "203.0.113.10/32"
+]
+
+# Prefer a VPC CIDR or loader private subnet CIDR. Do not use 0.0.0.0/0 for staging.
+backend_app_allowed_cidr_blocks = [
+  "10.0.0.0/16"
+]
+
+repo_url    = "https://github.com/<owner>/<repo>.git"
+repo_branch = "k6-load-tests"
+
+# Store the full backend .env file in SSM Parameter Store as SecureString.
+# That .env should include APP_PUBLISHED_HOST=0.0.0.0 for loader access.
+app_env_ssm_parameter_name = "/heat-trip/staging/backend/env"
+
+enable_observability = true
+
+tags = {
+  Owner = "change-me"
+}
+
