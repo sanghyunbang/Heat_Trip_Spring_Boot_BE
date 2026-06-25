@@ -55,3 +55,22 @@ replacements.txt
 # local-only ops workflows
 .github/workflows/deploy-backend.yml
 .github/workflows/smoke.yml
+
+# Terraform local state and secrets
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local observability and load-test outputs
+prometheus/data/
+grafana/data/
+k6/results/
+*.k6.json
