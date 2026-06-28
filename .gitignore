@@ -36,7 +36,9 @@ out/
 # 실제 민감한 설정 파일 무시
 /src/main/resources/application-private.properties
 application-private.properties
-config/
+# 루트의 배포용 config 디렉터리만 무시 (앵커 없이 두면 자바 패키지 .../config/ 까지 무시되어
+# WebConfig, *Properties 등 소스가 누락 → 클린 클론 시 빌드 깨짐)
+/config/
 .env
 .env.*
 !.env.example

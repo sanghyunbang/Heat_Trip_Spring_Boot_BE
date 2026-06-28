@@ -13,6 +13,7 @@ import com.heattrip.heat_trip_backend.tour.repository.PlaceDescriptionRepo;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
@@ -23,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TraitBootstrap {
@@ -38,6 +40,12 @@ public class TraitBootstrap {
         if (traitRepo.count() > 0) return;
 
         var res = new ClassPathResource("data/place_traits.csv");
+        if (!res.exists()) {
+            // 시드 데이터(data/** 는 .gitignore 대상)가 배포되지 않은 환경(테스트/클린 부팅)에서는
+            // 예외로 부팅을 막지 말고 스킵한다.
+            log.warn("[TraitBootstrap] data/place_traits.csv 가 없어 트레이트 시드를 건너뜁니다.");
+            return;
+        }
         try (var is = res.getInputStream();
              var br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
 

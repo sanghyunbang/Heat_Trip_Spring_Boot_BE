@@ -7,10 +7,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,6 +32,19 @@ class ExploreSearchSqlLogTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private Environment env;
+
+    /**
+     * 키워드 검색은 MySQL FULLTEXT(MATCH ... AGAINST ... IN BOOLEAN MODE)에 의존한다.
+     * 테스트 컨텍스트의 임베디드 H2는 이 문법을 지원하지 않으므로, MySQL이 아닐 때는 스킵한다.
+     * (실제 MySQL을 가리키도록 datasource를 바꾸면 그대로 실행된다.)
+     */
+    private boolean fullTextSupported() {
+        String url = env.getProperty("spring.datasource.url", "");
+        return url.toLowerCase().contains(":mysql:");
+    }
 
     @Test
     @DisplayName("Case 1 - 필터 없음")
@@ -65,6 +80,7 @@ class ExploreSearchSqlLogTest {
     @Test
     @DisplayName("Case 5 - q = 카페")
     void search_case5_keywordCafe() throws Exception {
+        assumeTrue(fullTextSupported(), "키워드 검색은 MySQL FULLTEXT가 필요해 H2에서는 스킵");
         performCase("Case 5 - q=카페",
                 get("/api/explore/places/search")
                         .param("q", "카페"));
@@ -73,6 +89,7 @@ class ExploreSearchSqlLogTest {
     @Test
     @DisplayName("Case 6 - 모든 조건 조합")
     void search_case6_allFilters() throws Exception {
+        assumeTrue(fullTextSupported(), "키워드 검색은 MySQL FULLTEXT가 필요해 H2에서는 스킵");
         performCase("Case 6 - all filters",
                 get("/api/explore/places/search")
                         .param("q", "카페")
