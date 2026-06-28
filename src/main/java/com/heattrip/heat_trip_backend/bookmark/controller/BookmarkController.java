@@ -1,12 +1,12 @@
 // src/main/java/com/heattrip/heat_trip_backend/bookmark/controller/BookmarkController.java
 package com.heattrip.heat_trip_backend.bookmark.controller;
 
+import com.heattrip.heat_trip_backend.auth.CurrentUser;
 import com.heattrip.heat_trip_backend.bookmark.dto.BookmarkRequest;
 import com.heattrip.heat_trip_backend.bookmark.dto.BookmarkResponse;
 import com.heattrip.heat_trip_backend.bookmark.entity.Bookmark;
 import com.heattrip.heat_trip_backend.bookmark.service.BookmarkService;
 import com.heattrip.heat_trip_backend.user.entity.User;
-import com.heattrip.heat_trip_backend.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,38 +19,29 @@ import java.util.*;
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
-    private final UserService userService;
-
-    private User me(String authHeader) {
-        String email = userService.emailFromAuth(authHeader);
-        return userService.findByEmail(email);
-    }
 
     /** 내 북마크 목록 */
     @GetMapping
-    public ResponseEntity<List<BookmarkResponse>> list(@RequestHeader("Authorization") String authHeader) {
-        User user = me(authHeader);
+    public ResponseEntity<List<BookmarkResponse>> list(@CurrentUser User user) {
         List<Bookmark> rows = bookmarkService.findAll(user);
         return ResponseEntity.ok(rows.stream().map(BookmarkResponse::from).toList());
     }
 
     /** 북마크 추가 (collectionId는 선택) */
     @PostMapping
-    public ResponseEntity<Void> add(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Void> add(@CurrentUser User user,
                                     @RequestBody BookmarkRequest req) {
         if (req.getContentId() == null || req.getContentId().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        User user = me(authHeader);
         bookmarkService.add(user, req.getContentId(), req.getCollectionId());
         return ResponseEntity.ok().build();
     }
 
     /** 북마크 제거 */
     @DeleteMapping("/{contentId}")
-    public ResponseEntity<Void> remove(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Void> remove(@CurrentUser User user,
                                        @PathVariable String contentId) {
-        User user = me(authHeader);
         bookmarkService.remove(user, contentId);
         return ResponseEntity.noContent().build();
     }

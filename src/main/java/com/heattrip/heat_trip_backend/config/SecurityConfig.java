@@ -22,6 +22,7 @@ import com.heattrip.heat_trip_backend.OAuth.handler.OAuth2SuccessHandler;
 import com.heattrip.heat_trip_backend.OAuth.jwt.JWTAuthenticationFilter;
 import com.heattrip.heat_trip_backend.OAuth.jwt.JWTProvider;
 import com.heattrip.heat_trip_backend.OAuth.service.CustomOAuth2UserService;
+import com.heattrip.heat_trip_backend.auth.RestAuthenticationEntryPoint;
 import com.heattrip.heat_trip_backend.security.ApiRateLimitFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final PublicSecurityProperties publicSecurityProperties;
     private final ApiRateLimitFilter apiRateLimitFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -74,6 +76,7 @@ public class SecurityConfig {
                 .requestMatchers("/public/**").authenticated()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
             .oauth2Login(oauth2 -> oauth2
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .successHandler(oAuth2SuccessHandler)

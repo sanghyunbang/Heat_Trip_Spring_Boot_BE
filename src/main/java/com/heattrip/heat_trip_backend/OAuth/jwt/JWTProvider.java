@@ -92,8 +92,10 @@ public class JWTProvider {
         try {
             parseClaims(token); // 내부에서 예외 없으면 유효한 토큰
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false; // 파싱 실패하면 유효하지 않은 토큰 
+        } catch (Exception e) {
+            // parseClaims가 JwtException/IllegalArgumentException을 RuntimeException으로 감싸 던지므로
+            // 광범위하게 잡아야 한다. 유효하지 않은 토큰은 false로 처리해 401로 이어지게 한다.
+            return false;
         }
     }
  
