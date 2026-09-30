@@ -2,6 +2,8 @@
 
 감정과 취향 기반으로 여행지를 탐색하고, 추천과 일정 관리까지 연결하는 여행 서비스 백엔드입니다.
 
+> **상태:** 2025 관광공사 공모전(3인, 우수상) + 2026.03–06 개인 리팩토링, 현재 보관 상태
+
 [![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square&logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)](https://www.mysql.com/)
@@ -22,7 +24,7 @@
 | --- | --- |
 | [Heat_Trip_Spring_Boot_BE](https://github.com/sanghyunbang/Heat_Trip_Spring_Boot_BE) | Spring Boot 백엔드 API, 인증, 검색, 큐레이션, 일정, 미디어 관리 |
 | [heat_trip_flutter](https://github.com/sanghyunbang/heat_trip_flutter) | Flutter 클라이언트 애플리케이션 |
-| [heattrip_rec_py](https://github.com/sanghyunbang/heattrip_rec_py) | Python 기반 추천 서버, LLM 추천 엔진 |
+| heattrip_rec_py (비공개) | Python 기반 추천 서버, LLM 추천 엔진 |
 
 ## 프로젝트 소개
 
@@ -72,7 +74,7 @@ flowchart LR
 
 추천 호출 경로는 `CurationController -> CurationRecommendService -> RecommendationPort -> OpenAiRecommendationAdapter -> Python recommender` 입니다. Python 서버 주소는 `LLM_RECOMMENDER_BASE_URL`로 주입하며, 운영에서는 외부 공개 포트가 아니라 Docker 내부 네트워크 통신을 기본으로 둡니다.
 
-이 저장소는 public 전환을 전제로 정리 중입니다. 코드와 예시 설정만 저장소에 두고, 실제 운영 비밀값과 운영 runbook, 배포 상세는 저장소 밖에서 관리하는 구조를 기준으로 합니다.
+저장소에는 코드와 예시 설정만 두고, 실제 운영 비밀값과 운영 runbook, 배포 상세는 저장소 밖에서 관리합니다.
 
 ## 기술 스택
 
