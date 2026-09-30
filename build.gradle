@@ -102,6 +102,8 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+    // 외부 인프라(MySQL·OAuth·AWS) 없이 테스트가 돌도록 application-test.properties(H2 + 더미 값)를 켠다
+    systemProperty 'spring.profiles.active', 'test'
     finalizedBy jacocoTestReport
 }
 
