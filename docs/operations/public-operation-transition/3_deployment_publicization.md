@@ -18,7 +18,7 @@
 
 ## 실제 수정 파일
 
-- [.github/workflows/deploy-backend.yml](/C:/Users/mm206/git_projects/heat_trip_backend/.github/workflows/deploy-backend.yml)
+- [.github/workflows/deploy-backend.yml](../../../.github/workflows/deploy-backend.yml)
 
 ## 남은 판단 포인트
 

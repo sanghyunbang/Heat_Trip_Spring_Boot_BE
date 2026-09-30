@@ -60,7 +60,7 @@
 | OpenAI API key | AI 요약 및 분석 | `src/main/resources/application.properties`에서 `OPENAI_API_KEY` 참조 | 불가 | 외부 주입 | 현재 env 참조 구조 |
 | Tour API key | 공공데이터 관광 API 호출 | `src/main/java/com/heattrip/heat_trip_backend/tour/service/TourApiClient.java`의 `TOUR.API.SECRET` | 불가 | 외부 주입 | query param에 직접 사용 |
 | 내부 LLM 추천기 URL 또는 내부 서비스 인증값 | 내부 추천 서비스 호출 | `src/main/java/com/heattrip/heat_trip_backend/config/LlmWebClientConfig.java`, `src/main/java/com/heattrip/heat_trip_backend/llm/RecommenderHealthChecker.java` | 조건부 | 외부 설정 | 내부망 주소면 public 저장소에 직접 두지 않는 편이 안전 |
-| self-hosted runner 경로 | 배포 러너 경로 및 서버 구조 | `.github/workflows/deploy-backend.yml` | 불가 | public 저장소에서 제거 또는 private workflow 분리 | `/Users/hyun/apps/heattrip-backend` 노출 |
+| self-hosted runner 경로 | 배포 러너 경로 및 서버 구조 | `.github/workflows/deploy-backend.yml` | 불가 | public 저장소에서 제거 또는 private workflow 분리 | `~/apps/heattrip-backend` 노출 |
 
 ## 2단계. 현재 상황 기준 현실적인 방향
 
