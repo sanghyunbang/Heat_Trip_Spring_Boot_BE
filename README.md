@@ -14,9 +14,10 @@
 
 | 구분 | 역할 | 링크 |
 | --- | --- | --- |
-| 포트폴리오 | 프로젝트 배경, 문제 정의, 결과물 소개 | [Heat Trip Notion](https://app.notion.com/p/Heat-Trip-321b82bc8b718166a51fd382c51d96b5?source=copy_link) |
-| 기술 Wiki | 구현 상세, 테스트 결과, 기술 의사결정 기록 | [GitHub Wiki](https://github.com/sanghyunbang/Heat_Trip_Spring_Boot_BE/wiki) |
-| 리팩토링 블로그 | 리팩토링 과정과 학습 기록 | [Heat Trip 프로젝트 리펙토링](https://velog.io/@sanghyunbang/series/Heat-Trip-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EB%A6%AC%ED%8E%99%ED%86%A0%EB%A7%81) |
+| 포트폴리오 | 프로젝트 배경, 문제 정의, 결과물 소개 | [betterworldwithlucas.com/projects/heat-trip](https://betterworldwithlucas.com/projects/heat-trip/) |
+| 앱 | 원스토어 등록(1.0.0, 2025.09) | [ONE store — Heat Trip](https://m.onestore.co.kr/v2/ko-kr/app/0001002340) |
+| 기술 Wiki | 구현 상세, 기술 의사결정 기록 | [GitHub Wiki](https://github.com/sanghyunbang/Heat_Trip_Spring_Boot_BE/wiki) |
+| 검색 최적화 문서 | 실행 계획으로 찾은 count 병목과 FULLTEXT 전환(8편) | [docs/database/sql-query-optimization-search](docs/database/sql-query-optimization-search) |
 
 ## 관련 리포지토리
 

@@ -20,7 +20,7 @@ Tour 관련 테스트는 한 종류로 끝내기 어렵다. 검증하려는 문�
 | 2 | `02-mysql-concurrency-integration-test.md` | MySQL/InnoDB 기준 read/write 동시성 검증 |
 | 3 | `03-import-read-latency-test.md` | import 중 read latency 변화를 수치화 |
 | 4 | `04-snapshot-search-text-update-test.md` | snapshot/search_text 전체 update 영향 측정 |
-| 5 | `05-k6-api-load-test.md` | 실제 HTTP API 부하 테스트 |
+| 5 | `05-k6-api-load-test.md` | 실제 HTTP API 부하 테스트 설계(측정 미실시) |
 
 ## 왜 단위 테스트만으로 부족한가
 
